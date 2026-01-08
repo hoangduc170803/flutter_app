@@ -50,34 +50,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 40, 32, 24),
-          child: Column(
-            children: [
-              // Step indicator
-              _buildStepIndicator(),
-              
-              // Header Section
-              _buildHeader(),
-              
-              const SizedBox(height: 48),
-              
-              // Phone Input
-              _buildPhoneInput(),
-              
-              const SizedBox(height: 32),
-              
-              // Action Button
-              _buildActionButton(),
-              
-              const SizedBox(height: 32),
-              
-              // Terms Text
-              _buildTermsText(),
-            ],
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 600;
+    
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.08, // 8% padding
+              vertical: size.height * 0.04, // 4% padding
+            ),
+            child: Column(
+              children: [
+                // Step indicator
+                _buildStepIndicator(),
+                
+                // Header Section
+                _buildHeader(size, isSmallScreen),
+                
+                SizedBox(height: size.height * 0.05), // 5% spacing
+                
+                // Phone Input
+                _buildPhoneInput(),
+                
+                SizedBox(height: size.height * 0.03), // 3% spacing
+                
+                // Action Button
+                _buildActionButton(),
+                
+                SizedBox(height: size.height * 0.03), // 3% spacing
+                
+                // Terms Text
+                _buildTermsText(),
+              ],
+            ),
           ),
         ),
       ),
@@ -102,18 +110,21 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(Size size, bool isSmallScreen) {
+    final iconSize = size.width * 0.2; // 20% of screen width
+    final iconSizeConstrained = iconSize.clamp(60.0, 100.0);
+    
     return Column(
       children: [
-        const SizedBox(height: 32),
+        SizedBox(height: size.height * 0.03), // 3% spacing
         
         // Icon Container
         Container(
-          width: 80,
-          height: 80,
+          width: iconSizeConstrained,
+          height: iconSizeConstrained,
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF), // blue-50
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(iconSizeConstrained * 0.2),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF2563EB).withOpacity(0.15),
@@ -122,35 +133,35 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.smartphone,
-            size: 36,
-            color: Color(0xFF2563EB), // blue-600
+            size: iconSizeConstrained * 0.45,
+            color: const Color(0xFF2563EB), // blue-600
           ),
         ),
         
-        const SizedBox(height: 32),
+        SizedBox(height: size.height * 0.03), // 3% spacing
         
         // Welcome Text
-        const Text(
+        Text(
           'Chào mừng bạn',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: isSmallScreen ? 20 : 24,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF111827), // gray-900
+            color: const Color(0xFF111827), // gray-900
             letterSpacing: -0.5,
           ),
         ),
         
-        const SizedBox(height: 12),
+        SizedBox(height: size.height * 0.01), // 1% spacing
         
         // Subtitle
-        const Text(
+        Text(
           'Nhập số điện thoại để bắt đầu phiên',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: isSmallScreen ? 13 : 14,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280), // gray-500
+            color: const Color(0xFF6B7280), // gray-500
           ),
         ),
       ],
@@ -274,9 +285,9 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 Text(
                   'Hoàn tất',
                   style: TextStyle(

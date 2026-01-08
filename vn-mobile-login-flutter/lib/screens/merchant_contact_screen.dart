@@ -118,26 +118,28 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          // Main Content
-          AnimatedOpacity(
-            opacity: (_showConfirmModal || _showVirtualNumber) ? 0.3 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            child: IgnorePointer(
-              ignoring: _showConfirmModal || _showVirtualNumber,
-              child: _buildMainContent(),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Main Content
+            AnimatedOpacity(
+              opacity: (_showConfirmModal || _showVirtualNumber) ? 0.3 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: IgnorePointer(
+                ignoring: _showConfirmModal || _showVirtualNumber,
+                child: _buildMainContent(),
+              ),
             ),
-          ),
-          
-          // Confirm Modal (Bước 4)
-          if (_showConfirmModal)
-            _buildConfirmModal(),
-          
-          // Virtual Number Result + Call Button (Bước 5)
-          if (_showVirtualNumber)
-            _buildVirtualNumberModal(),
-        ],
+            
+            // Confirm Modal (Bước 4)
+            if (_showConfirmModal)
+              _buildConfirmModal(),
+            
+            // Virtual Number Result + Call Button (Bước 5)
+            if (_showVirtualNumber)
+              _buildVirtualNumberModal(),
+          ],
+        ),
       ),
     );
   }
@@ -166,8 +168,15 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   }
 
   Widget _buildHeader() {
+    final size = MediaQuery.of(context).size;
+    
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 48, 8, 8),
+      padding: EdgeInsets.fromLTRB(
+        size.width * 0.02, // 2% left
+        size.height * 0.02, // 2% top
+        size.width * 0.02, // 2% right
+        size.height * 0.01, // 1% bottom
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC).withOpacity(0.8),
       ),
@@ -190,7 +199,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             ),
           ),
           
-          const SizedBox(height: 8),
+          SizedBox(height: size.height * 0.01), // 1% spacing
           
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -218,20 +227,26 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   }
 
   Widget _buildProfileSection() {
+    final size = MediaQuery.of(context).size;
+    final avatarSize = (size.width * 0.25).clamp(80.0, 120.0);
+    
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      padding: EdgeInsets.symmetric(
+        horizontal: size.width * 0.06, // 6% padding
+        vertical: size.height * 0.02, // 2% padding
+      ),
       child: Column(
         children: [
           // Avatar
           Stack(
             children: [
               Container(
-                width: 100,
-                height: 100,
+                width: avatarSize,
+                height: avatarSize,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(50),
+                  borderRadius: BorderRadius.circular(avatarSize / 2),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF38B2AC).withOpacity(0.15),
@@ -240,14 +255,14 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(46),
+                  borderRadius: BorderRadius.circular(avatarSize / 2 - 4),
                   child: Image.network(
                     mockMerchant.avatarUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         color: const Color(0xFFE5E7EB),
-                        child: const Icon(Icons.person, size: 40, color: Color(0xFF9CA3AF)),
+                        child: Icon(Icons.person, size: avatarSize * 0.4, color: const Color(0xFF9CA3AF)),
                       );
                     },
                   ),
@@ -270,15 +285,15 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             ],
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.015), // 1.5% spacing
           
           // Name
           Text(
             mockMerchant.name,
-            style: const TextStyle(
-              fontSize: 22,
+            style: TextStyle(
+              fontSize: size.width < 360 ? 18 : 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
             ),
           ),
           
@@ -322,21 +337,25 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   }
 
   Widget _buildActionGrid() {
+    final size = MediaQuery.of(context).size;
+    final buttonSize = (size.width * 0.16).clamp(56.0, 72.0);
+    final primaryButtonSize = buttonSize * 1.12;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: size.width * 0.06),
       child: Column(
         children: [
           // Hint for Call button
           Container(
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: EdgeInsets.only(bottom: size.height * 0.015),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFDCFCE7),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF86EFAC)),
             ),
-            child: Row(
-              children: const [
+            child: const Row(
+              children: [
                 Icon(Icons.phone_in_talk, size: 20, color: Color(0xFF16A34A)),
                 SizedBox(width: 8),
                 Expanded(
@@ -362,18 +381,21 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                 bgColor: const Color(0xFF22C55E),
                 onTap: _onCallPressed,
                 isPrimary: true,
+                buttonSize: primaryButtonSize,
               ),
               _buildActionButton(
                 icon: Icons.chat_bubble,
                 label: 'Chat',
                 bgColor: const Color(0xFF3B82F6),
                 onTap: () {},
+                buttonSize: buttonSize,
               ),
               _buildActionButton(
                 icon: Icons.videocam,
                 label: 'Video',
                 bgColor: const Color(0xFF8B5CF6),
                 onTap: () {},
+                buttonSize: buttonSize,
               ),
             ],
           ),
@@ -388,6 +410,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     required Color bgColor,
     required VoidCallback onTap,
     bool isPrimary = false,
+    required double buttonSize,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -395,11 +418,11 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: isPrimary ? 72 : 64,
-            height: isPrimary ? 72 : 64,
+            width: buttonSize,
+            height: buttonSize,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(isPrimary ? 28 : 24),
+              borderRadius: BorderRadius.circular(buttonSize * 0.38),
               boxShadow: isPrimary ? [
                 BoxShadow(
                   color: bgColor.withOpacity(0.4),
@@ -408,7 +431,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                 ),
               ] : null,
             ),
-            child: Icon(icon, size: isPrimary ? 32 : 28, color: Colors.white),
+            child: Icon(icon, size: buttonSize * 0.44, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
@@ -427,8 +450,15 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   Widget _buildOrderInfo() {
     if (_order == null) return const SizedBox();
     
+    final size = MediaQuery.of(context).size;
+    
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      padding: EdgeInsets.fromLTRB(
+        size.width * 0.06,
+        size.height * 0.02,
+        size.width * 0.06,
+        0,
+      ),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -485,14 +515,17 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   }
 
   Widget _buildConfirmModal() {
+    final size = MediaQuery.of(context).size;
+    final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
+    
     return Container(
       color: const Color(0xFF0F172A).withOpacity(0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(32),
+            margin: EdgeInsets.symmetric(horizontal: size.width * 0.06),
+            padding: EdgeInsets.all(size.width * 0.07),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(32),
@@ -524,27 +557,27 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                SizedBox(height: size.height * 0.025),
                 
                 // Icon
                 Stack(
                   children: [
                     Container(
-                      width: 72,
-                      height: 72,
+                      width: iconSize,
+                      height: iconSize,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0FDFA),
-                        borderRadius: BorderRadius.circular(36),
+                        borderRadius: BorderRadius.circular(iconSize / 2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.smartphone,
-                        size: 32,
-                        color: Color(0xFF14B8A6),
+                        size: iconSize * 0.44,
+                        color: const Color(0xFF14B8A6),
                       ),
                     ),
                     Positioned(
-                      top: 16,
-                      right: 12,
+                      top: iconSize * 0.22,
+                      right: iconSize * 0.16,
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
@@ -561,19 +594,19 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ],
                 ),
                 
-                const SizedBox(height: 24),
+                SizedBox(height: size.height * 0.025),
                 
                 // Title
-                const Text(
+                Text(
                   'Confirm Phone Number',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: size.width < 360 ? 18 : 20,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
                 
-                const SizedBox(height: 12),
+                SizedBox(height: size.height * 0.012),
                 
                 // Description
                 const Text(
@@ -587,20 +620,20 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                SizedBox(height: size.height * 0.025),
                 
                 // Phone Number
                 Text(
                   _maskPhoneNumber(_phoneNumber),
-                  style: const TextStyle(
-                    fontSize: 28,
+                  style: TextStyle(
+                    fontSize: size.width < 360 ? 24 : 28,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: const Color(0xFF0F172A),
                     letterSpacing: 2,
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                SizedBox(height: size.height * 0.03),
                 
                 // Buttons
                 Row(
@@ -663,14 +696,17 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
   }
 
   Widget _buildVirtualNumberModal() {
+    final size = MediaQuery.of(context).size;
+    final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
+    
     return Container(
       color: const Color(0xFF0F172A).withOpacity(0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(28),
+            margin: EdgeInsets.symmetric(horizontal: size.width * 0.06),
+            padding: EdgeInsets.all(size.width * 0.06),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(32),
@@ -702,36 +738,36 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 20),
+                SizedBox(height: size.height * 0.02),
                 
                 // Success Icon
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: iconSize,
+                  height: iconSize,
                   decoration: BoxDecoration(
                     color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(36),
+                    borderRadius: BorderRadius.circular(iconSize / 2),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_circle,
-                    size: 40,
-                    color: Color(0xFF22C55E),
+                    size: iconSize * 0.55,
+                    color: const Color(0xFF22C55E),
                   ),
                 ),
                 
-                const SizedBox(height: 20),
+                SizedBox(height: size.height * 0.02),
                 
                 // Title
-                const Text(
+                Text(
                   'Phiên đã được thiết lập!',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: size.width < 360 ? 16 : 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
                 
-                const SizedBox(height: 8),
+                SizedBox(height: size.height * 0.008),
                 
                 // Description
                 const Text(
@@ -742,7 +778,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 12),
+                SizedBox(height: size.height * 0.012),
                 
                 // Virtual Number
                 Container(
@@ -754,21 +790,21 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                   child: Text(
                     _formatVirtualNumber(_virtualNumber),
-                    style: const TextStyle(
-                      fontSize: 24,
+                    style: TextStyle(
+                      fontSize: size.width < 360 ? 20 : 24,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF166534),
+                      color: const Color(0xFF166534),
                       letterSpacing: 2,
                     ),
                   ),
                 ),
                 
-                const SizedBox(height: 12),
+                SizedBox(height: size.height * 0.012),
                 
                 // Info text
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.shield, size: 16, color: Color(0xFF22C55E)),
                     SizedBox(width: 6),
                     Text(
@@ -782,7 +818,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ],
                 ),
                 
-                const SizedBox(height: 20),
+                SizedBox(height: size.height * 0.02),
                 
                 // Call Button - Mở app điện thoại
                 Material(
@@ -794,9 +830,9 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.phone, size: 22, color: Colors.white),
                           SizedBox(width: 10),
                           Text(
@@ -813,7 +849,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 10),
+                SizedBox(height: size.height * 0.01),
                 
                 // Hint
                 Container(
@@ -822,9 +858,9 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Icon(Icons.touch_app, size: 16, color: Color(0xFF64748B)),
                       SizedBox(width: 6),
                       Text(
@@ -838,7 +874,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 12),
+                SizedBox(height: size.height * 0.012),
                 
                 // Close button
                 TextButton(

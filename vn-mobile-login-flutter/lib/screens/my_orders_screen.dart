@@ -9,45 +9,58 @@ class MyOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Lấy số điện thoại từ màn hình trước (nếu có)
     final phoneNumber = ModalRoute.of(context)?.settings.arguments as String?;
+    final size = MediaQuery.of(context).size;
     
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB), // gray-50
-      body: Column(
-        children: [
-          // Header
-          _buildHeader(context, phoneNumber),
-          
-          // Orders List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              itemCount: mockOrders.length,
-              itemBuilder: (context, index) {
-                return OrderCard(
-                  order: mockOrders[index],
-                  onTap: () {
-                    // Bước 2 -> 3: Click vào order để xem thông tin merchant
-                    Navigator.pushNamed(
-                      context,
-                      '/merchant-contact',
-                      arguments: {
-                        'order': mockOrders[index],
-                        'phoneNumber': phoneNumber,
-                      },
-                    );
-                  },
-                );
-              },
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            _buildHeader(context, phoneNumber, size),
+            
+            // Orders List
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(
+                  horizontal: size.width * 0.05, // 5% padding
+                  vertical: size.height * 0.02, // 2% padding
+                ),
+                itemCount: mockOrders.length,
+                itemBuilder: (context, index) {
+                  return OrderCard(
+                    order: mockOrders[index],
+                    onTap: () {
+                      // Bước 2 -> 3: Click vào order để xem thông tin merchant
+                      Navigator.pushNamed(
+                        context,
+                        '/merchant-contact',
+                        arguments: {
+                          'order': mockOrders[index],
+                          'phoneNumber': phoneNumber,
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, String? phoneNumber) {
+  Widget _buildHeader(BuildContext context, String? phoneNumber, Size size) {
+    final isSmallScreen = size.height < 600;
+    
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
+      padding: EdgeInsets.fromLTRB(
+        size.width * 0.05, // 5% left
+        size.height * 0.02, // 2% top
+        size.width * 0.05, // 5% right
+        size.height * 0.015, // 1.5% bottom
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
       ),
@@ -71,35 +84,37 @@ class MyOrdersScreen extends StatelessWidget {
             ),
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.015), // 1.5% spacing
           
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Order Details',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827), // gray-900
-                      letterSpacing: -0.5,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Order Details',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 20 : 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827), // gray-900
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    phoneNumber != null 
-                        ? 'SĐT: $phoneNumber' 
-                        : 'Chọn đơn hàng để liên hệ merchant',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF6B7280), // gray-500
+                    const SizedBox(height: 4),
+                    Text(
+                      phoneNumber != null 
+                          ? 'SĐT: $phoneNumber' 
+                          : 'Chọn đơn hàng để liên hệ merchant',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 12 : 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF6B7280), // gray-500
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               // Bell Button
               Container(
@@ -136,7 +151,7 @@ class MyOrdersScreen extends StatelessWidget {
             ],
           ),
           
-          const SizedBox(height: 8),
+          SizedBox(height: size.height * 0.01), // 1% spacing
           
           // Hint
           Container(
@@ -146,8 +161,8 @@ class MyOrdersScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFFCD34D)),
             ),
-            child: Row(
-              children: const [
+            child: const Row(
+              children: [
                 Icon(Icons.touch_app, size: 20, color: Color(0xFFB45309)),
                 SizedBox(width: 8),
                 Expanded(
