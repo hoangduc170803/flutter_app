@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+import '../../core/constants/app_colors.dart';
+import '../providers/providers.dart';
+
+class LoginView extends ConsumerStatefulWidget {
+  const LoginView({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginViewState extends ConsumerState<LoginView> {
   final TextEditingController _phoneController = TextEditingController();
   final FocusNode _phoneFocusNode = FocusNode();
   bool _isFocused = false;
@@ -16,73 +20,77 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _phoneFocusNode.addListener(() {
-      setState(() {
-        _isFocused = _phoneFocusNode.hasFocus;
-      });
+    _phoneFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _phoneFocusNode.hasFocus;
     });
   }
 
   @override
   void dispose() {
     _phoneController.dispose();
+    _phoneFocusNode.removeListener(_onFocusChange);
     _phoneFocusNode.dispose();
     super.dispose();
   }
 
+  /// Handler cho nút Hoàn tất - chỉ gọi submit, không xử lý navigation
   void _onComplete() {
-    // Bước 1: Hoàn tất nhập số điện thoại -> Chuyển đến màn Orders
-    if (_phoneController.text.isNotEmpty) {
-      Navigator.pushNamed(
-        context, 
-        '/orders',
-        arguments: _phoneController.text,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập số điện thoại'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    FocusScope.of(context).unfocus();
+    ref.read(loginViewModelProvider.notifier).submitPhoneNumber(_phoneController.text);
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(loginViewModelProvider);
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.height < 600;
-    
+
+    // Listen để xử lý side effects (navigation, snackbar)
+    ref.listen(loginViewModelProvider, (previous, current) {
+      // Xử lý navigation khi success
+      if (current.isSuccess && !(previous?.isSuccess ?? false)) {
+        Navigator.pushNamed(
+          context,
+          '/orders',
+          arguments: current.phoneNumber,
+        );
+        // Reset state sau khi navigate
+        ref.read(loginViewModelProvider.notifier).reset();
+      }
+
+      // Xử lý hiển thị error
+      if (current.error != null && current.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(current.error!),
+            backgroundColor: AppColors.primaryRed,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: size.width * 0.08, // 8% padding
-              vertical: size.height * 0.04, // 4% padding
+              horizontal: size.width * 0.08,
+              vertical: size.height * 0.04,
             ),
             child: Column(
               children: [
-                // Step indicator
                 _buildStepIndicator(),
-                
-                // Header Section
                 _buildHeader(size, isSmallScreen),
-                
-                SizedBox(height: size.height * 0.05), // 5% spacing
-                
-                // Phone Input
-                _buildPhoneInput(),
-                
-                SizedBox(height: size.height * 0.03), // 3% spacing
-                
-                // Action Button
-                _buildActionButton(),
-                
-                SizedBox(height: size.height * 0.03), // 3% spacing
-                
-                // Terms Text
+                SizedBox(height: size.height * 0.05),
+                _buildPhoneInput(state.isLoading),
+                SizedBox(height: size.height * 0.03),
+                _buildActionButton(state.isLoading),
+                SizedBox(height: size.height * 0.03),
                 _buildTermsText(),
               ],
             ),
@@ -96,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFDBEAFE),
+        color: AppColors.blue100,
         borderRadius: BorderRadius.circular(20),
       ),
       child: const Text(
@@ -104,30 +112,27 @@ class _LoginScreenState extends State<LoginScreen> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF2563EB),
+          color: AppColors.primaryBlue,
         ),
       ),
     );
   }
 
   Widget _buildHeader(Size size, bool isSmallScreen) {
-    final iconSize = size.width * 0.2; // 20% of screen width
-    final iconSizeConstrained = iconSize.clamp(60.0, 100.0);
-    
+    final iconSize = (size.width * 0.2).clamp(60.0, 100.0);
+
     return Column(
       children: [
-        SizedBox(height: size.height * 0.03), // 3% spacing
-        
-        // Icon Container
+        SizedBox(height: size.height * 0.03),
         Container(
-          width: iconSizeConstrained,
-          height: iconSizeConstrained,
+          width: iconSize,
+          height: iconSize,
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF), // blue-50
-            borderRadius: BorderRadius.circular(iconSizeConstrained * 0.2),
+            color: AppColors.blue50,
+            borderRadius: BorderRadius.circular(iconSize * 0.2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withOpacity(0.15),
+                color: AppColors.primaryBlue.withOpacity(0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -135,48 +140,40 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Icon(
             Icons.smartphone,
-            size: iconSizeConstrained * 0.45,
-            color: const Color(0xFF2563EB), // blue-600
+            size: iconSize * 0.45,
+            color: AppColors.primaryBlue,
           ),
         ),
-        
-        SizedBox(height: size.height * 0.03), // 3% spacing
-        
-        // Welcome Text
+        SizedBox(height: size.height * 0.03),
         Text(
           'Chào mừng bạn',
           style: TextStyle(
             fontSize: isSmallScreen ? 20 : 24,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF111827), // gray-900
+            color: AppColors.gray900,
             letterSpacing: -0.5,
           ),
         ),
-        
-        SizedBox(height: size.height * 0.01), // 1% spacing
-        
-        // Subtitle
+        SizedBox(height: size.height * 0.01),
         Text(
           'Nhập số điện thoại để bắt đầu phiên',
           style: TextStyle(
             fontSize: isSmallScreen ? 13 : 14,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF6B7280), // gray-500
+            color: AppColors.gray500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPhoneInput() {
+  Widget _buildPhoneInput(bool isLoading) {
     return Container(
       decoration: BoxDecoration(
-        color: _isFocused ? Colors.white : const Color(0xFFF9FAFB), // gray-50
+        color: _isFocused ? AppColors.surface : AppColors.gray50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _isFocused 
-              ? const Color(0xFF2563EB) // blue-600
-              : const Color(0xFFE5E7EB), // gray-200
+          color: _isFocused ? AppColors.primaryBlue : AppColors.gray200,
           width: _isFocused ? 2 : 1,
         ),
         boxShadow: [
@@ -189,35 +186,31 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: Row(
         children: [
-          // Phone Icon
           Padding(
             padding: const EdgeInsets.only(left: 20),
             child: Icon(
               Icons.phone,
               size: 20,
-              color: _isFocused 
-                  ? const Color(0xFF2563EB) // blue-600
-                  : const Color(0xFF9CA3AF), // gray-400
+              color: _isFocused ? AppColors.primaryBlue : AppColors.gray400,
             ),
           ),
-          
-          // Text Input
           Expanded(
             child: TextField(
               controller: _phoneController,
               focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
+              enabled: !isLoading,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF111827), // gray-900
+                color: AppColors.gray900,
               ),
               decoration: const InputDecoration(
                 hintText: '090 123 4567',
                 hintStyle: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF9CA3AF), // gray-400
+                  color: AppColors.gray400,
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
@@ -230,8 +223,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-          
-          // Country Code Indicator
           AnimatedOpacity(
             opacity: _isFocused ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
@@ -239,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
               margin: const EdgeInsets.only(right: 20),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6), // gray-100
+                color: AppColors.gray100,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
@@ -247,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF), // gray-400
+                  color: AppColors.gray400,
                 ),
               ),
             ),
@@ -257,51 +248,68 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(bool isLoading) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _onComplete,
+        onTap: isLoading ? null : _onComplete,
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFFF59E0B), // amber-500
-                Color(0xFFD97706), // amber-600
-              ],
+            gradient: LinearGradient(
+              colors: isLoading
+                  ? [AppColors.gray400, AppColors.gray500]
+                  : [AppColors.amber500, AppColors.amber600],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFF59E0B).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: isLoading
+                ? null
+                : [
+                    BoxShadow(
+                      color: AppColors.amber500.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'Hoàn tất',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                if (isLoading) ...[
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward,
-                  size: 20,
-                  color: Colors.white,
-                ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Đang xử lý...',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ] else ...[
+                  const Text(
+                    'Hoàn tất',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 20, color: Colors.white),
+                ],
               ],
             ),
           ),
@@ -315,24 +323,18 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         const Text(
           'Bằng việc tiếp tục, bạn đồng ý với',
-          style: TextStyle(
-            fontSize: 12,
-            color: Color(0xFF9CA3AF), // gray-400
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 12, color: AppColors.gray400, height: 1.5),
           textAlign: TextAlign.center,
         ),
         GestureDetector(
-          onTap: () {
-            debugPrint('Terms tapped');
-          },
+          onTap: () => debugPrint('Terms tapped'),
           child: const Text(
             'Điều khoản dịch vụ',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF9CA3AF), // gray-400
+              color: AppColors.gray400,
               decoration: TextDecoration.underline,
-              decorationColor: Color(0xFF9CA3AF),
+              decorationColor: AppColors.gray400,
             ),
           ),
         ),

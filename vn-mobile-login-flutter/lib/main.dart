@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/login_screen.dart';
-import 'screens/my_orders_screen.dart';
-import 'screens/merchant_contact_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'core/constants/app_colors.dart';
+import 'routes/app_router.dart';
+import 'presentation/views/login_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +14,11 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -25,30 +31,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
+          seedColor: AppColors.primaryBlue,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
-      // Bắt đầu từ màn hình Login (Bước 1)
-      home: const LoginScreen(),
-      onGenerateRoute: (settings) {
-        Widget page;
-        switch (settings.name) {
-          case '/orders':
-            page = const MyOrdersScreen();
-            break;
-          case '/merchant-contact':
-            page = const MerchantContactScreen();
-            break;
-          default:
-            page = const LoginScreen();
-        }
-        return MaterialPageRoute(
-          builder: (context) => page,
-          settings: settings,
-        );
-      },
+      home: const LoginView(),
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }

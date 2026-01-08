@@ -1,163 +1,146 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/merchant.dart';
-import '../models/order.dart';
 
-class MerchantContactScreen extends StatefulWidget {
-  const MerchantContactScreen({super.key});
+import '../../core/constants/app_colors.dart';
+import '../../core/utils/phone_utils.dart';
+import '../../data/models/order.dart';
+import '../providers/providers.dart';
+import '../viewmodels/merchant_contact_viewmodel.dart';
+
+class MerchantContactView extends ConsumerStatefulWidget {
+  const MerchantContactView({super.key});
 
   @override
-  State<MerchantContactScreen> createState() => _MerchantContactScreenState();
+  ConsumerState<MerchantContactView> createState() => _MerchantContactViewState();
 }
 
-class _MerchantContactScreenState extends State<MerchantContactScreen> {
-  bool _showConfirmModal = false;
-  bool _showVirtualNumber = false;
-  String? _phoneNumber;
-  Order? _order;
-  
-  final String _virtualNumber = '1900636999'; // Số ảo được cấp
+class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      _phoneNumber = args['phoneNumber'] as String?;
-      _order = args['order'] as Order?;
+    if (!_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          ref.read(merchantContactViewModelProvider.notifier).setArguments(
+            order: args['order'] as Order?,
+            phoneNumber: args['phoneNumber'] as String?,
+          );
+        }
+        ref.read(merchantContactViewModelProvider.notifier).loadMerchant();
+      });
     }
   }
 
-  void _onCallPressed() {
-    // Bước 3: Khi nhấn Call, hiển thị modal xác nhận
-    setState(() {
-      _showConfirmModal = true;
-    });
-  }
+  Future<void> _makePhoneCall(String virtualNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: virtualNumber);
 
-  void _onConfirmYes() {
-    // Bước 4: Xác nhận -> Hiển thị kết quả số ảo
-    setState(() {
-      _showConfirmModal = false;
-      _showVirtualNumber = true;
-    });
-  }
-
-  void _onConfirmNo() {
-    setState(() {
-      _showConfirmModal = false;
-    });
-  }
-
-  Future<void> _makePhoneCall() async {
-    // Bước 5: Mở app điện thoại mặc định với số ảo
-    final Uri phoneUri = Uri(scheme: 'tel', path: _virtualNumber);
-    
     try {
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
-        // Fallback cho web - hiển thị thông báo
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.phone_in_talk, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Text('Đang gọi đến số ${_formatVirtualNumber(_virtualNumber)}...'),
-                ],
-              ),
-              backgroundColor: const Color(0xFF22C55E),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+        _showCallSnackbar(virtualNumber);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.phone, color: Colors.white),
-                const SizedBox(width: 12),
-                Text('Gọi số: ${_formatVirtualNumber(_virtualNumber)}'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF22C55E),
+      _showCallSnackbar(virtualNumber);
+    }
+  }
+
+  void _showCallSnackbar(String virtualNumber) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.phone_in_talk, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Đang gọi đến số ${PhoneUtils.formatVirtualNumber(virtualNumber)}...'),
+            ],
           ),
-        );
-      }
+          backgroundColor: AppColors.primaryGreen,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
-  }
-
-  void _onClose() {
-    // Quay về màn hình đầu
-    Navigator.popUntil(context, (route) => route.isFirst);
-  }
-
-  String _maskPhoneNumber(String? phone) {
-    if (phone == null || phone.length < 4) return '098****232';
-    final cleaned = phone.replaceAll(' ', '');
-    if (cleaned.length >= 7) {
-      return '${cleaned.substring(0, 3)}****${cleaned.substring(cleaned.length - 3)}';
-    }
-    return '098****232';
-  }
-
-  String _formatVirtualNumber(String number) {
-    if (number.length == 10) {
-      return '${number.substring(0, 4)} ${number.substring(4, 7)} ${number.substring(7)}';
-    }
-    return number;
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(merchantContactViewModelProvider);
+
+    // Listen để xử lý side effects
+    ref.listen(merchantContactViewModelProvider, (previous, current) {
+      // Xử lý navigation events
+      if (current.navigationEvent != NavigationEvent.none &&
+          current.navigationEvent != previous?.navigationEvent) {
+        switch (current.navigationEvent) {
+          case NavigationEvent.goHome:
+            ref.read(merchantContactViewModelProvider.notifier).reset();
+            Navigator.popUntil(context, (route) => route.isFirst);
+            break;
+          case NavigationEvent.makeCall:
+            _makePhoneCall(current.virtualNumber);
+            ref.read(merchantContactViewModelProvider.notifier).clearNavigationEvent();
+            break;
+          case NavigationEvent.none:
+            break;
+        }
+      }
+
+      // Show error snackbar
+      if (current.error != null && current.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(current.error!),
+            backgroundColor: AppColors.primaryRed,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Stack(
           children: [
-            // Main Content
             AnimatedOpacity(
-              opacity: (_showConfirmModal || _showVirtualNumber) ? 0.3 : 1.0,
+              opacity: state.modalState != ModalState.none ? 0.3 : 1.0,
               duration: const Duration(milliseconds: 200),
               child: IgnorePointer(
-                ignoring: _showConfirmModal || _showVirtualNumber,
-                child: _buildMainContent(),
+                ignoring: state.modalState != ModalState.none,
+                child: _buildMainContent(state),
               ),
             ),
-            
-            // Confirm Modal (Bước 4)
-            if (_showConfirmModal)
-              _buildConfirmModal(),
-            
-            // Virtual Number Result + Call Button (Bước 5)
-            if (_showVirtualNumber)
-              _buildVirtualNumberModal(),
+            if (state.modalState == ModalState.confirmPhone)
+              _buildConfirmModal(state),
+            if (state.modalState == ModalState.virtualNumber)
+              _buildVirtualNumberModal(state),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(MerchantContactState state) {
+    if (state.isLoading && state.merchant == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Column(
       children: [
-        // Header
         _buildHeader(),
-        
-        // Content
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               children: [
-                _buildProfileSection(),
+                _buildProfileSection(state),
                 _buildActionGrid(),
-                _buildOrderInfo(),
+                _buildOrderInfo(state),
                 const SizedBox(height: 32),
               ],
             ),
@@ -169,24 +152,23 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
 
   Widget _buildHeader() {
     final size = MediaQuery.of(context).size;
-    
+
     return Container(
       padding: EdgeInsets.fromLTRB(
-        size.width * 0.02, // 2% left
-        size.height * 0.02, // 2% top
-        size.width * 0.02, // 2% right
-        size.height * 0.01, // 1% bottom
+        size.width * 0.02,
+        size.height * 0.02,
+        size.width * 0.02,
+        size.height * 0.01,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC).withOpacity(0.8),
+        color: AppColors.background.withOpacity(0.8),
       ),
       child: Column(
         children: [
-          // Step indicator
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFD1FAE5),
+              color: AppColors.green100,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
@@ -198,23 +180,21 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
               ),
             ),
           ),
-          
-          SizedBox(height: size.height * 0.01), // 1% spacing
-          
+          SizedBox(height: size.height * 0.01),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.chevron_left, size: 24),
-                color: const Color(0xFF374151),
+                color: AppColors.gray700,
               ),
               const Text(
                 'Contact Merchant',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
+                  color: AppColors.gray900,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -226,18 +206,20 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(MerchantContactState state) {
     final size = MediaQuery.of(context).size;
     final avatarSize = (size.width * 0.25).clamp(80.0, 120.0);
-    
+    final merchant = state.merchant;
+
+    if (merchant == null) return const SizedBox();
+
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: size.width * 0.06, // 6% padding
-        vertical: size.height * 0.02, // 2% padding
+        horizontal: size.width * 0.06,
+        vertical: size.height * 0.02,
       ),
       child: Column(
         children: [
-          // Avatar
           Stack(
             children: [
               Container(
@@ -249,7 +231,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   borderRadius: BorderRadius.circular(avatarSize / 2),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF38B2AC).withOpacity(0.15),
+                      color: AppColors.teal500.withOpacity(0.15),
                       blurRadius: 20,
                     ),
                   ],
@@ -257,18 +239,21 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(avatarSize / 2 - 4),
                   child: Image.network(
-                    mockMerchant.avatarUrl,
+                    merchant.avatarUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: const Color(0xFFE5E7EB),
-                        child: Icon(Icons.person, size: avatarSize * 0.4, color: const Color(0xFF9CA3AF)),
+                        color: AppColors.gray200,
+                        child: Icon(
+                          Icons.person,
+                          size: avatarSize * 0.4,
+                          color: AppColors.gray400,
+                        ),
                       );
                     },
                   ),
                 ),
               ),
-              // Online Indicator
               Positioned(
                 bottom: 4,
                 right: 4,
@@ -276,7 +261,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E),
+                    color: AppColors.primaryGreen,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.white, width: 3),
                   ),
@@ -284,41 +269,35 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
               ),
             ],
           ),
-          
-          SizedBox(height: size.height * 0.015), // 1.5% spacing
-          
-          // Name
+          SizedBox(height: size.height * 0.015),
           Text(
-            mockMerchant.name,
+            merchant.name,
             style: TextStyle(
               fontSize: size.width < 360 ? 18 : 22,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
+              color: AppColors.gray900,
             ),
           ),
-          
           const SizedBox(height: 4),
-          
-          // Rating & Category
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
+                  color: AppColors.amber100,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star, size: 14, color: Color(0xFFB45309)),
+                    const Icon(Icons.star, size: 14, color: AppColors.amber700),
                     const SizedBox(width: 4),
                     Text(
-                      mockMerchant.rating.toString(),
+                      merchant.rating.toString(),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFB45309),
+                        color: AppColors.amber700,
                       ),
                     ),
                   ],
@@ -326,8 +305,8 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '• ${mockMerchant.category}',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                '• ${merchant.category}',
+                style: const TextStyle(fontSize: 14, color: AppColors.gray500),
               ),
             ],
           ),
@@ -340,23 +319,22 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     final size = MediaQuery.of(context).size;
     final buttonSize = (size.width * 0.16).clamp(56.0, 72.0);
     final primaryButtonSize = buttonSize * 1.12;
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: size.width * 0.06),
       child: Column(
         children: [
-          // Hint for Call button
           Container(
             margin: EdgeInsets.only(bottom: size.height * 0.015),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
+              color: AppColors.green100,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF86EFAC)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.phone_in_talk, size: 20, color: Color(0xFF16A34A)),
+                Icon(Icons.phone_in_talk, size: 20, color: AppColors.green600),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -364,36 +342,36 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF166534),
+                      color: AppColors.green700,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildActionButton(
                 icon: Icons.phone,
                 label: 'Call',
-                bgColor: const Color(0xFF22C55E),
-                onTap: _onCallPressed,
+                bgColor: AppColors.primaryGreen,
+                // ✅ Chỉ trigger action
+                onTap: () => ref.read(merchantContactViewModelProvider.notifier).onCallPressed(),
                 isPrimary: true,
                 buttonSize: primaryButtonSize,
               ),
               _buildActionButton(
                 icon: Icons.chat_bubble,
                 label: 'Chat',
-                bgColor: const Color(0xFF3B82F6),
+                bgColor: AppColors.primaryBlue,
                 onTap: () {},
                 buttonSize: buttonSize,
               ),
               _buildActionButton(
                 icon: Icons.videocam,
                 label: 'Video',
-                bgColor: const Color(0xFF8B5CF6),
+                bgColor: AppColors.primaryPurple,
                 onTap: () {},
                 buttonSize: buttonSize,
               ),
@@ -423,13 +401,15 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(buttonSize * 0.38),
-              boxShadow: isPrimary ? [
-                BoxShadow(
-                  color: bgColor.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ] : null,
+              boxShadow: isPrimary
+                  ? [
+                      BoxShadow(
+                        color: bgColor.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
             child: Icon(icon, size: buttonSize * 0.44, color: Colors.white),
           ),
@@ -439,7 +419,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w600,
-              color: isPrimary ? bgColor : const Color(0xFF6B7280),
+              color: isPrimary ? bgColor : AppColors.gray500,
             ),
           ),
         ],
@@ -447,11 +427,12 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     );
   }
 
-  Widget _buildOrderInfo() {
-    if (_order == null) return const SizedBox();
-    
+  Widget _buildOrderInfo(MerchantContactState state) {
+    if (state.order == null) return const SizedBox();
+
     final size = MediaQuery.of(context).size;
-    
+    final order = state.order!;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         size.width * 0.06,
@@ -464,7 +445,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.gray200),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,7 +455,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.gray400,
                 letterSpacing: 1,
               ),
             ),
@@ -483,15 +464,15 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order #${_order!.orderNumber}',
+                  'Order #${order.orderNumber}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
+                    color: AppColors.gray900,
                   ),
                 ),
                 Text(
-                  '\$${_order!.total.toStringAsFixed(2)}',
+                  '\$${order.total.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -502,11 +483,8 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${_order!.date} • ${_order!.time}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              '${order.date} • ${order.time}',
+              style: const TextStyle(fontSize: 13, color: AppColors.gray500),
             ),
           ],
         ),
@@ -514,12 +492,12 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     );
   }
 
-  Widget _buildConfirmModal() {
+  Widget _buildConfirmModal(MerchantContactState state) {
     final size = MediaQuery.of(context).size;
     final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
-    
+
     return Container(
-      color: const Color(0xFF0F172A).withOpacity(0.6),
+      color: AppColors.slate900.withOpacity(0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
@@ -540,11 +518,10 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Step indicator
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                    color: AppColors.amber100,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
@@ -552,27 +529,24 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFB45309),
+                      color: AppColors.amber700,
                     ),
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.025),
-                
-                // Icon
                 Stack(
                   children: [
                     Container(
                       width: iconSize,
                       height: iconSize,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDFA),
+                        color: AppColors.teal50,
                         borderRadius: BorderRadius.circular(iconSize / 2),
                       ),
                       child: Icon(
                         Icons.smartphone,
                         size: iconSize * 0.44,
-                        color: const Color(0xFF14B8A6),
+                        color: AppColors.teal500,
                       ),
                     ),
                     Positioned(
@@ -587,63 +561,52 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                         child: const Icon(
                           Icons.lock,
                           size: 12,
-                          color: Color(0xFF14B8A6),
+                          color: AppColors.teal500,
                         ),
                       ),
                     ),
                   ],
                 ),
-                
                 SizedBox(height: size.height * 0.025),
-                
-                // Title
                 Text(
                   'Confirm Phone Number',
                   style: TextStyle(
                     fontSize: size.width < 360 ? 18 : 20,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.slate900,
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.012),
-                
-                // Description
                 const Text(
                   'Please confirm if the following\nnumber is your phone number',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                     height: 1.5,
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.025),
-                
-                // Phone Number
                 Text(
-                  _maskPhoneNumber(_phoneNumber),
+                  PhoneUtils.maskPhoneNumber(state.phoneNumber),
                   style: TextStyle(
                     fontSize: size.width < 360 ? 24 : 28,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.slate900,
                     letterSpacing: 2,
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.03),
-                
-                // Buttons
                 Row(
                   children: [
                     Expanded(
                       child: Material(
-                        color: const Color(0xFFF3F4F6),
+                        color: AppColors.gray100,
                         borderRadius: BorderRadius.circular(12),
                         child: InkWell(
-                          onTap: _onConfirmNo,
+                          // ✅ Chỉ trigger action
+                          onTap: () => ref.read(merchantContactViewModelProvider.notifier).onConfirmNo(),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -653,7 +616,7 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF475569),
+                                  color: AppColors.slate700,
                                 ),
                               ),
                             ),
@@ -664,22 +627,34 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Material(
-                        color: const Color(0xFF14B8A6),
+                        color: AppColors.teal500,
                         borderRadius: BorderRadius.circular(12),
                         child: InkWell(
-                          onTap: _onConfirmYes,
+                          // ✅ Chỉ trigger action
+                          onTap: state.isLoading 
+                              ? null 
+                              : () => ref.read(merchantContactViewModelProvider.notifier).onConfirmYes(),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: const Center(
-                              child: Text(
-                                'Yes',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
+                            child: Center(
+                              child: state.isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Yes',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -695,12 +670,12 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
     );
   }
 
-  Widget _buildVirtualNumberModal() {
+  Widget _buildVirtualNumberModal(MerchantContactState state) {
     final size = MediaQuery.of(context).size;
     final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
-    
+
     return Container(
-      color: const Color(0xFF0F172A).withOpacity(0.6),
+      color: AppColors.slate900.withOpacity(0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
@@ -721,11 +696,10 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Step indicator
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
+                    color: AppColors.green100,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
@@ -733,54 +707,39 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF166534),
+                      color: AppColors.green700,
                     ),
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.02),
-                
-                // Success Icon
                 Container(
                   width: iconSize,
                   height: iconSize,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
+                    color: AppColors.green100,
                     borderRadius: BorderRadius.circular(iconSize / 2),
                   ),
                   child: Icon(
                     Icons.check_circle,
                     size: iconSize * 0.55,
-                    color: const Color(0xFF22C55E),
+                    color: AppColors.primaryGreen,
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.02),
-                
-                // Title
                 Text(
                   'Phiên đã được thiết lập!',
                   style: TextStyle(
                     fontSize: size.width < 360 ? 16 : 18,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.slate900,
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.008),
-                
-                // Description
                 const Text(
                   'Số điện thoại ảo của bạn:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.slate500),
                 ),
-                
                 SizedBox(height: size.height * 0.012),
-                
-                // Virtual Number
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
@@ -789,43 +748,38 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     border: Border.all(color: const Color(0xFF86EFAC), width: 2),
                   ),
                   child: Text(
-                    _formatVirtualNumber(_virtualNumber),
+                    PhoneUtils.formatVirtualNumber(state.virtualNumber),
                     style: TextStyle(
                       fontSize: size.width < 360 ? 20 : 24,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF166534),
+                      color: AppColors.green700,
                       letterSpacing: 2,
                     ),
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.012),
-                
-                // Info text
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.shield, size: 16, color: Color(0xFF22C55E)),
+                    Icon(Icons.shield, size: 16, color: AppColors.primaryGreen),
                     SizedBox(width: 6),
                     Text(
                       'Số thật của bạn được bảo mật',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF22C55E),
+                        color: AppColors.primaryGreen,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                
                 SizedBox(height: size.height * 0.02),
-                
-                // Call Button - Mở app điện thoại
                 Material(
-                  color: const Color(0xFF22C55E),
+                  color: AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
-                    onTap: _makePhoneCall,
+                    // ✅ Chỉ trigger action
+                    onTap: () => ref.read(merchantContactViewModelProvider.notifier).onMakeCallPressed(),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       width: double.infinity,
@@ -848,43 +802,35 @@ class _MerchantContactScreenState extends State<MerchantContactScreen> {
                     ),
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.01),
-                
-                // Hint
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.touch_app, size: 16, color: Color(0xFF64748B)),
+                      Icon(Icons.touch_app, size: 16, color: AppColors.slate500),
                       SizedBox(width: 6),
                       Text(
                         'Nhấn để mở app điện thoại',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF64748B),
-                        ),
+                        style: TextStyle(fontSize: 11, color: AppColors.slate500),
                       ),
                     ],
                   ),
                 ),
-                
                 SizedBox(height: size.height * 0.012),
-                
-                // Close button
                 TextButton(
-                  onPressed: _onClose,
+                  // ✅ Chỉ trigger action
+                  onPressed: () => ref.read(merchantContactViewModelProvider.notifier).onClosePressed(),
                   child: const Text(
                     'Đóng',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
+                      color: AppColors.slate500,
                     ),
                   ),
                 ),
