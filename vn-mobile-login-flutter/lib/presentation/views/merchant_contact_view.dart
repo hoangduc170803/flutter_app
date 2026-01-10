@@ -161,7 +161,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
         size.height * 0.01,
       ),
       decoration: BoxDecoration(
-        color: AppColors.background.withOpacity(0.8),
+        color: AppColors.background.withValues(alpha: 0.8),
       ),
       child: Column(
         children: [
@@ -231,7 +231,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
                   borderRadius: BorderRadius.circular(avatarSize / 2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.teal500.withOpacity(0.15),
+                      color: AppColors.teal500.withValues(alpha: 0.15),
                       blurRadius: 20,
                     ),
                   ],
@@ -404,7 +404,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
               boxShadow: isPrimary
                   ? [
                       BoxShadow(
-                        color: bgColor.withOpacity(0.4),
+                        color: bgColor.withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -497,7 +497,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
     final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
 
     return Container(
-      color: AppColors.slate900.withOpacity(0.6),
+      color: AppColors.slate900.withValues(alpha: 0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
@@ -509,7 +509,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -675,7 +675,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
     final iconSize = (size.width * 0.18).clamp(56.0, 72.0);
 
     return Container(
-      color: AppColors.slate900.withOpacity(0.6),
+      color: AppColors.slate900.withValues(alpha: 0.6),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Center(
@@ -687,7 +687,7 @@ class _MerchantContactViewState extends ConsumerState<MerchantContactView> {
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
