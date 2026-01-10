@@ -11,15 +11,11 @@ class PhoneSessionRepositoryImpl implements PhoneSessionRepository {
 
   @override
   Future<String> createSession(String phoneNumber) async {
-    // Simulate API call to create PNM session
-    await Future.delayed(const Duration(milliseconds: 500));
     return 'session_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   @override
   Future<String> getVirtualNumber(String sessionId) async {
-    // Simulate API call to get virtual number
-    await Future.delayed(const Duration(milliseconds: 300));
     return _virtualNumber;
   }
 }

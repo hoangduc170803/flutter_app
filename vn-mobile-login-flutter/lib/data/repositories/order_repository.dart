@@ -59,14 +59,11 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<List<Order>> getOrders() async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
     return _mockOrders;
   }
 
   @override
   Future<Order?> getOrderById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 200));
     try {
       return _mockOrders.firstWhere((order) => order.id == id);
     } catch (e) {

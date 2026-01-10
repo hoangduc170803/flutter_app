@@ -22,14 +22,11 @@ class MerchantRepositoryImpl implements MerchantRepository {
 
   @override
   Future<Merchant> getMerchantById(String id) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
     return _mockMerchant;
   }
 
   @override
   Future<Merchant> getDefaultMerchant() async {
-    await Future.delayed(const Duration(milliseconds: 300));
     return _mockMerchant;
   }
 }
