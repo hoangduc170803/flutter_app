@@ -55,10 +55,6 @@ class LoginViewModel extends StateNotifier<LoginState> {
     );
 
     try {
-      // Simulate API call (thay bằng real API sau)
-      // await authRepository.verifyPhoneNumber(phoneNumber);
-      await Future.delayed(const Duration(milliseconds: 500));
-
       // Thành công - View sẽ listen và navigate
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {
