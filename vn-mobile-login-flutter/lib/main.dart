@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'core/constants/app_colors.dart';
 import 'routes/app_router.dart';
@@ -26,18 +27,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PNM Demo - Phone Number Masking',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryBlue,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      home: const LoginView(),
-      onGenerateRoute: AppRouter.onGenerateRoute,
+    return ScreenUtilInit(
+      designSize: const Size(375, 812),
+      minTextAdapt: true,
+      splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            title: 'PNM Demo - Phone Number Masking',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: AppColors.primaryBlue,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            home: const LoginView(),
+            onGenerateRoute: AppRouter.onGenerateRoute,
+          );
+        },
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../data/repositories/merchant_repository.dart';
 import '../../data/repositories/order_repository.dart';

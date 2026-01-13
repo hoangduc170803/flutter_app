@@ -67,5 +67,21 @@ class AppColors {
   // Background Colors
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
+
+  // Màu cam chủ đạo (#f27f0d)
+  static const Color contactPrimary = Color(0xFFF27F0D);
+
+  // Màu nền phụ (#f8f7f5 - Dùng cho SearchBar, Button tròn)
+  static const Color contactSurface = Color(0xFFF8F7F5);
+
+  // Màu chữ chính (#1c140d - Đen pha nâu)
+  static const Color contactTextMain = Color(0xFF1C140D);
+
+  // Màu chữ phụ (#9c7349 - Nâu nhạt)
+  static const Color contactTextSub = Color(0xFF9C7349);
+
+  // Màu cho Tag User (Cam nhạt pha)
+  static const Color orange50 = Color(0xFFFFF7ED);  // Nền tag
+  static const Color orange100 = Color(0xFFFFE0B2); // Viền tag
 }
 
