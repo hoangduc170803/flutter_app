@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 /// State for Login screen
 class LoginState {
@@ -30,9 +29,10 @@ class LoginState {
   }
 }
 
-/// ViewModel for Login screen
-class LoginViewModel extends StateNotifier<LoginState> {
-  LoginViewModel() : super(const LoginState());
+/// ViewModel for Login screen - Riverpod 3.x Notifier
+class LoginViewModel extends Notifier<LoginState> {
+  @override
+  LoginState build() => const LoginState();
 
   void updatePhoneNumber(String phone) {
     state = state.copyWith(phoneNumber: phone, error: null);
@@ -56,6 +56,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
     );
 
     try {
+      // Simulate API call
+      await Future.delayed(const Duration(milliseconds: 500));
       // Thành công - View sẽ listen và navigate
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {

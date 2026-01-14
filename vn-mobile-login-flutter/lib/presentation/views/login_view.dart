@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../providers/providers.dart';
+import '../viewmodels/login_viewmodel.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -37,7 +39,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
     super.dispose();
   }
 
-  /// Handler cho nút Hoàn tất - chỉ gọi submit, không xử lý navigation
   void _onComplete() {
     FocusScope.of(context).unfocus();
     ref.read(loginViewModelProvider.notifier).submitPhoneNumber(_phoneController.text);
@@ -46,23 +47,17 @@ class _LoginViewState extends ConsumerState<LoginView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loginViewModelProvider);
-    final size = MediaQuery.of(context).size;
-    final isSmallScreen = size.height < 600;
 
-    // Listen để xử lý side effects (navigation, snackbar)
-    ref.listen(loginViewModelProvider, (previous, current) {
-      // Xử lý navigation khi success
+    ref.listen<LoginState>(loginViewModelProvider, (previous, current) {
       if (current.isSuccess && !(previous?.isSuccess ?? false)) {
         Navigator.pushNamed(
           context,
           '/orders',
           arguments: current.phoneNumber,
         );
-        // Reset state sau khi navigate
         ref.read(loginViewModelProvider.notifier).reset();
       }
 
-      // Xử lý hiển thị error
       if (current.error != null && current.error != previous?.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -79,18 +74,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: size.width * 0.08,
-              vertical: size.height * 0.04,
+              horizontal: 30.w,
+              vertical: 32.h,
             ),
             child: Column(
               children: [
                 _buildStepIndicator(),
-                _buildHeader(size, isSmallScreen),
-                SizedBox(height: size.height * 0.05),
+                _buildHeader(),
+                SizedBox(height: 40.h),
                 _buildPhoneInput(state.isLoading),
-                SizedBox(height: size.height * 0.03),
+                SizedBox(height: 24.h),
                 _buildActionButton(state.isLoading),
-                SizedBox(height: size.height * 0.03),
+                SizedBox(height: 24.h),
                 _buildTermsText(),
               ],
             ),
@@ -102,15 +97,15 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   Widget _buildStepIndicator() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: AppColors.blue100,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
       ),
-      child: const Text(
+      child: Text(
         'Bước 1/5 • Nhập số điện thoại',
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           color: AppColors.primaryBlue,
         ),
@@ -118,47 +113,45 @@ class _LoginViewState extends ConsumerState<LoginView> {
     );
   }
 
-  Widget _buildHeader(Size size, bool isSmallScreen) {
-    final iconSize = (size.width * 0.2).clamp(60.0, 100.0);
-
+  Widget _buildHeader() {
     return Column(
       children: [
-        SizedBox(height: size.height * 0.03),
+        SizedBox(height: 24.h),
         Container(
-          width: iconSize,
-          height: iconSize,
+          width: 80.w,
+          height: 80.w,
           decoration: BoxDecoration(
             color: AppColors.blue50,
-            borderRadius: BorderRadius.circular(iconSize * 0.2),
+            borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
+                blurRadius: 20.r,
+                offset: Offset(0, 4.h),
               ),
             ],
           ),
           child: Icon(
             Icons.smartphone,
-            size: iconSize * 0.45,
+            size: 36.sp,
             color: AppColors.primaryBlue,
           ),
         ),
-        SizedBox(height: size.height * 0.03),
+        SizedBox(height: 24.h),
         Text(
           'Chào mừng bạn',
           style: TextStyle(
-            fontSize: isSmallScreen ? 20 : 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w700,
             color: AppColors.gray900,
             letterSpacing: -0.5,
           ),
         ),
-        SizedBox(height: size.height * 0.01),
+        SizedBox(height: 8.h),
         Text(
           'Nhập số điện thoại để bắt đầu phiên',
           style: TextStyle(
-            fontSize: isSmallScreen ? 13 : 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w500,
             color: AppColors.gray500,
           ),
@@ -171,7 +164,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
     return Container(
       decoration: BoxDecoration(
         color: _isFocused ? AppColors.surface : AppColors.gray50,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
           color: _isFocused ? AppColors.primaryBlue : AppColors.gray200,
           width: _isFocused ? 2 : 1,
@@ -179,18 +172,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            blurRadius: 4.r,
+            offset: Offset(0, 1.h),
           ),
         ],
       ),
       child: Row(
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 20),
+            padding: EdgeInsets.only(left: 20.w),
             child: Icon(
               Icons.phone,
-              size: 20,
+              size: 20.sp,
               color: _isFocused ? AppColors.primaryBlue : AppColors.gray400,
             ),
           ),
@@ -200,22 +193,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
               focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
               enabled: !isLoading,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w500,
                 color: AppColors.gray900,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '090 123 4567',
                 hintStyle: TextStyle(
-                  fontSize: 18,
+                  fontSize: 18.sp,
                   fontWeight: FontWeight.w500,
                   color: AppColors.gray400,
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 20,
+                  horizontal: 14.w,
+                  vertical: 20.h,
                 ),
               ),
               inputFormatters: [
@@ -227,16 +220,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
             opacity: _isFocused ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
             child: Container(
-              margin: const EdgeInsets.only(right: 20),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: EdgeInsets.only(right: 20.w),
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: AppColors.gray100,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(4.r),
               ),
-              child: const Text(
+              child: Text(
                 'VN +84',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   color: AppColors.gray400,
                 ),
@@ -253,7 +246,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
       color: Colors.transparent,
       child: InkWell(
         onTap: isLoading ? null : _onComplete,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: Ink(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -263,52 +256,52 @@ class _LoginViewState extends ConsumerState<LoginView> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
             boxShadow: isLoading
                 ? null
                 : [
                     BoxShadow(
                       color: AppColors.amber500.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      blurRadius: 12.r,
+                      offset: Offset(0, 4.h),
                     ),
                   ],
           ),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: 16.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (isLoading) ...[
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
+                  SizedBox(
+                    width: 20.w,
+                    height: 20.w,
+                    child: const CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
+                  SizedBox(width: 12.w),
+                  Text(
                     'Đang xử lý...',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
                 ] else ...[
-                  const Text(
+                  Text(
                     'Hoàn tất',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward, size: 20, color: Colors.white),
+                  SizedBox(width: 8.w),
+                  Icon(Icons.arrow_forward, size: 20.sp, color: Colors.white),
                 ],
               ],
             ),
@@ -321,17 +314,17 @@ class _LoginViewState extends ConsumerState<LoginView> {
   Widget _buildTermsText() {
     return Column(
       children: [
-        const Text(
+        Text(
           'Bằng việc tiếp tục, bạn đồng ý với',
-          style: TextStyle(fontSize: 12, color: AppColors.gray400, height: 1.5),
+          style: TextStyle(fontSize: 12.sp, color: AppColors.gray400, height: 1.5),
           textAlign: TextAlign.center,
         ),
         GestureDetector(
           onTap: () => debugPrint('Terms tapped'),
-          child: const Text(
+          child: Text(
             'Điều khoản dịch vụ',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.sp,
               color: AppColors.gray400,
               decoration: TextDecoration.underline,
               decorationColor: AppColors.gray400,
