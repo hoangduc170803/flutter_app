@@ -5,22 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/utils/phone_utils.dart';
 import '../../data/models/contact.dart';
 import '../providers/providers.dart';
 import '../viewmodels/contact_detail_viewmodel.dart';
-
-// iOS Style Glassmorphism Theme
-class _Theme {
-  static const Color background = Color(0xFFE1EDEE);
-  static const Color primary = Color(0xFF007AFF);
-  // Card with 40% opacity slate color
-  static Color cardBackground = const Color(0xFF94A3B8).withValues(alpha: 0.4);
-  static const Color textWhite = Colors.white;
-  static Color textWhite70 = Colors.white.withValues(alpha: 0.7);
-  static Color textWhite50 = Colors.white.withValues(alpha: 0.5);
-  static Color divider = Colors.white.withValues(alpha: 0.2);
-}
+import '../widgets/call_masking_modal.dart';
 
 class ContactDetailView extends ConsumerStatefulWidget {
   const ContactDetailView({super.key});
@@ -71,9 +59,8 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _CallMaskingModal(
-        contact: state.contact,
-        userPhoneNumber: state.phoneNumber,
+      builder: (context) => CallMaskingModal(
+        contactName: state.contact?.fullName,
         virtualNumber: state.virtualNumber ?? '1900636999',
         onConfirm: () {
           Navigator.pop(context);
@@ -136,9 +123,9 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
 
     if (state.isLoading && state.contact == null) {
       return const Scaffold(
-        backgroundColor: _Theme.background,
+        backgroundColor: AppColors.detailBackground,
         body: Center(
-          child: CircularProgressIndicator(color: _Theme.primary),
+          child: CircularProgressIndicator(color: AppColors.detailPrimary),
         ),
       );
     }
@@ -146,22 +133,22 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
     final contact = state.contact;
     if (contact == null) {
       return Scaffold(
-        backgroundColor: _Theme.background,
+        backgroundColor: AppColors.detailBackground,
         body: Center(
           child: Text(
             'Contact not found',
-            style: TextStyle(color: _Theme.textWhite, fontSize: 16.sp),
+            style: TextStyle(color: AppColors.detailTextWhite, fontSize: 16.sp),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: _Theme.background,
+      backgroundColor: AppColors.detailBackground,
       body: Stack(
         children: [
           // Background
-          Container(color: _Theme.background),
+          Container(color: AppColors.detailBackground),
           SafeArea(
             child: Column(
               children: [
@@ -244,7 +231,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                   ),
                   child: Icon(
                     Icons.chevron_left,
-                    color: _Theme.primary,
+                    color: AppColors.detailPrimary,
                     size: 28.sp,
                   ),
                 ),
@@ -275,7 +262,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
-                      color: _Theme.primary,
+                      color: AppColors.detailPrimary,
                     ),
                   ),
                 ),
@@ -324,7 +311,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.5,
-              color: _Theme.textWhite70,
+              color: AppColors.detailTextWhite70,
               shadows: [
                 Shadow(
                   color: Colors.black.withValues(alpha: 0.3),
@@ -340,7 +327,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
             style: TextStyle(
               fontSize: 36.sp,
               fontWeight: FontWeight.w700,
-              color: _Theme.textWhite,
+              color: AppColors.detailTextWhite,
               shadows: [
                 Shadow(
                   color: Colors.black.withValues(alpha: 0.3),
@@ -364,7 +351,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
           style: TextStyle(
             fontSize: 64.sp,
             fontWeight: FontWeight.w700,
-            color: contact.initialsTextColor ?? _Theme.textWhite,
+            color: contact.initialsTextColor ?? AppColors.detailTextWhite,
           ),
         ),
       ),
@@ -409,7 +396,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
         child: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: _Theme.cardBackground,
+            color: AppColors.detailCardBackground,
             borderRadius: BorderRadius.circular(28.r),
           ),
           child: Row(
@@ -419,7 +406,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                 height: 40.w,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: _Theme.divider),
+                  border: Border.all(color: AppColors.detailDivider),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(19.r),
@@ -438,14 +425,14 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                   style: TextStyle(
                     fontSize: 17.sp,
                     fontWeight: FontWeight.w400,
-                    color: _Theme.textWhite,
+                    color: AppColors.detailTextWhite,
                   ),
                 ),
               ),
               Icon(
                 Icons.chevron_right,
                 size: 24.sp,
-                color: _Theme.textWhite50,
+                color: AppColors.detailTextWhite50,
               ),
             ],
           ),
@@ -463,7 +450,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w700,
-            color: contact.initialsTextColor ?? _Theme.textWhite,
+            color: contact.initialsTextColor ?? AppColors.detailTextWhite,
           ),
         ),
       ),
@@ -478,7 +465,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: _Theme.cardBackground,
+            color: AppColors.detailCardBackground,
             borderRadius: BorderRadius.circular(28.r),
           ),
           child: Column(
@@ -486,12 +473,12 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
             children: [
               if (contact.category != null) ...[
                 _InfoRow(label: 'Category', value: contact.category!),
-                Container(height: 1, color: _Theme.divider),
+                Container(height: 1, color: AppColors.detailDivider),
               ],
               _InfoRow(label: 'Company', value: contact.company),
-              Container(height: 1, color: _Theme.divider),
+              Container(height: 1, color: AppColors.detailDivider),
               _InfoRow(label: 'email', value: contact.email),
-              Container(height: 1, color: _Theme.divider),
+              Container(height: 1, color: AppColors.detailDivider),
               _AddressRow(address: contact.address),
             ],
           ),
@@ -509,7 +496,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
           width: double.infinity,
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: _Theme.cardBackground,
+            color: AppColors.detailCardBackground,
             borderRadius: BorderRadius.circular(28.r),
           ),
           child: Column(
@@ -519,7 +506,7 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                 'Notes',
                 style: TextStyle(
                   fontSize: 13.sp,
-                  color: _Theme.textWhite70,
+                  color: AppColors.detailTextWhite70,
                 ),
               ),
               SizedBox(height: 4.h),
@@ -528,218 +515,10 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                 style: TextStyle(
                   fontSize: 17.sp,
                   fontStyle: FontStyle.italic,
-                  color: _Theme.textWhite.withValues(alpha: 0.6),
+                  color: AppColors.detailTextWhite.withValues(alpha: 0.6),
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ===========================================================================
-// Call Masking Modal
-// ===========================================================================
-
-class _CallMaskingModal extends StatelessWidget {
-  final ContactDetail? contact;
-  final String? userPhoneNumber;
-  final String virtualNumber;
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
-
-  // Theme colors
-  static const Color _primaryOrange = Color(0xFFF27F0D);
-  static const Color _textDark = Color(0xFF1C140D);
-
-  const _CallMaskingModal({
-    required this.contact,
-    required this.userPhoneNumber,
-    required this.virtualNumber,
-    required this.onConfirm,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final formattedVirtual = PhoneUtils.formatVirtualNumber(virtualNumber);
-
-    return Container(
-      color: Colors.black.withValues(alpha: 0.4),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: SafeArea(
-          child: Center(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 24.w),
-              padding: EdgeInsets.all(32.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 40.r,
-                    offset: Offset(0, 20.h),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Handle bar
-                  Container(
-                    width: 48.w,
-                    height: 6.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E5E5),
-                      borderRadius: BorderRadius.circular(3.r),
-                    ),
-                  ),
-                  SizedBox(height: 32.h),
-
-                  // Title
-                  Text(
-                    'Confirm Call',
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _textDark,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // Subtitle
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Text(
-                      'Bạn có muốn gọi thông qua số ảo này không?',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.grey[500],
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(height: 40.h),
-
-                  // Virtual number display
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 24.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: const Color(0xFFEEEEEE),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      formattedVirtual,
-                      style: TextStyle(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
-                        letterSpacing: 1,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(height: 40.h),
-
-                  // Action buttons
-                  Row(
-                    children: [
-                      // Call button
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: onConfirm,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
-                            decoration: BoxDecoration(
-                              color: _primaryOrange,
-                              borderRadius: BorderRadius.circular(12.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _primaryOrange.withValues(alpha: 0.3),
-                                  blurRadius: 12.r,
-                                  offset: Offset(0, 4.h),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.call, color: Colors.white, size: 22.sp),
-                                SizedBox(width: 8.w),
-                                Text(
-                                  'Gọi ngay',
-                                  style: TextStyle(
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      // Cancel button
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: onCancel,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Text(
-                              'Hủy',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 32.h),
-
-                  // Security footer
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.lock,
-                        size: 14.sp,
-                        color: Colors.grey[400],
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        'SECURE CLOUD CONNECTION',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey[400],
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -772,12 +551,12 @@ class _ActionButton extends StatelessWidget {
             width: 64.w,
             height: 48.h,
             decoration: BoxDecoration(
-              color: _Theme.cardBackground,
+              color: AppColors.detailCardBackground,
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
               icon,
-              color: _Theme.textWhite,
+              color: AppColors.detailTextWhite,
               size: 24.sp,
             ),
           ),
@@ -805,7 +584,7 @@ class _InfoRow extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13.sp,
-              color: _Theme.textWhite70,
+              color: AppColors.detailTextWhite70,
             ),
           ),
           SizedBox(height: 2.h),
@@ -814,7 +593,7 @@ class _InfoRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 17.sp,
               fontWeight: FontWeight.w500,
-              color: _Theme.textWhite,
+              color: AppColors.detailTextWhite,
             ),
           ),
         ],
@@ -840,7 +619,7 @@ class _AddressRow extends StatelessWidget {
             'Company Address',
             style: TextStyle(
               fontSize: 13.sp,
-              color: _Theme.textWhite70,
+              color: AppColors.detailTextWhite70,
             ),
           ),
           SizedBox(height: 2.h),
@@ -848,7 +627,7 @@ class _AddressRow extends StatelessWidget {
             address.street,
             style: TextStyle(
               fontSize: 17.sp,
-              color: _Theme.textWhite,
+              color: AppColors.detailTextWhite,
               height: 1.3,
             ),
           ),
@@ -857,7 +636,7 @@ class _AddressRow extends StatelessWidget {
               '${address.city} ${address.state} ${address.zip}'.trim(),
               style: TextStyle(
                 fontSize: 17.sp,
-                color: _Theme.textWhite,
+                color: AppColors.detailTextWhite,
                 height: 1.3,
               ),
             ),
@@ -866,7 +645,7 @@ class _AddressRow extends StatelessWidget {
               address.country,
               style: TextStyle(
                 fontSize: 17.sp,
-                color: _Theme.textWhite,
+                color: AppColors.detailTextWhite,
                 height: 1.3,
               ),
             ),

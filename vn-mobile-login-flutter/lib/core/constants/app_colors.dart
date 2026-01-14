@@ -83,5 +83,19 @@ class AppColors {
   // Màu cho Tag User (Cam nhạt pha)
   static const Color orange50 = Color(0xFFFFF7ED);  // Nền tag
   static const Color orange100 = Color(0xFFFFE0B2); // Viền tag
+
+  // Contact Detail Theme (Glassmorphism)
+  static const Color detailBackground = Color(0xFFE1EDEE);
+  static const Color detailPrimary = Color(0xFF007AFF);
+  static const Color detailTextWhite = Colors.white;
+  static Color detailTextWhite70 = Colors.white.withValues(alpha: 0.7);
+  static Color detailTextWhite50 = Colors.white.withValues(alpha: 0.5);
+  static Color detailDivider = Colors.white.withValues(alpha: 0.2);
+  static Color detailCardBackground = const Color(0xFF94A3B8).withValues(alpha: 0.4);
+
+  // Call Modal Theme
+  static const Color modalPrimaryOrange = Color(0xFFF27F0D);
+  static const Color modalTextDark = Color(0xFF1C140D);
+  static const Color modalBackground = Color(0xFFF5F5F5);
 }
 
