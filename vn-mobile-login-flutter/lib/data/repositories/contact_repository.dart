@@ -10,6 +10,13 @@ abstract class ContactRepository {
 
 /// Implementation with mock data
 class ContactRepositoryImpl implements ContactRepository {
+  // Local asset paths for avatars
+  static const String _avatarAlice = 'assets/images/avatars/alice.jpg';
+  static const String _avatarAria = 'assets/images/avatars/aria.jpg';
+  static const String _avatarBen = 'assets/images/avatars/ben.jpg';
+  static const String _avatarCarla = 'assets/images/avatars/carla.jpg';
+  static const String _avatarDiana = 'assets/images/avatars/diana.jpg';
+
   // Mock contact groups data with category assigned to each contact
   static final List<ContactGroup> _mockContactGroups = [
     ContactGroup(
@@ -20,7 +27,7 @@ class ContactRepositoryImpl implements ContactRepository {
           id: 'c1',
           name: 'Alice Anderson',
           company: 'TechFlow Solutions',
-          avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuDPALnPTx6lMKM3caEx3VgpIouG_f9mDtCQHIHL8MKruxN14OYrduANRmtoaipFV1w1RNumMTIcRFvHIq9UfIsQt0dwMEGfIpCxv-nOuKKgNEsEKxscv8kndNsc9NHvkxcYGdnysamJrDmLmi7q1cIJyd6QR2SWrwyKyjYSNgmFmKNxful5NMqWcjsMJm6JaHL_dqGQP923OzHLrp2rG9qoPaqbD5_V47fFEJYufr4IMY3Mjvqb7efYBdbqFhfVmuvww3fbngNsZT',
+          avatarAsset: _avatarAlice,
           category: 'Thu hồi nợ',
         ),
         Contact(
@@ -42,7 +49,7 @@ class ContactRepositoryImpl implements ContactRepository {
           id: 'c3',
           name: 'Aria Stark',
           company: 'Winterfell Security',
-          avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVI1LUjcO4jlqywAa4Vk9MR4y-qNNR6eAVrhEKBHPgi5H2OKj7GqcgH41uKPe2NDNPmBJgcjnzrx1LvRX4pp3PdV0HvzQOaShbLe1bDh1bAWEEpuXKxbvYcskpslnV-SX9Ui0dCRTzbRH8DzqmlFobkuRn2G9fnIezaW-SHZaO3_96SHX50AWHxUkh4odcASScjnKZWOflxR5RDX6HtTTr2FaGUeeC5n0-5X7EaQEKat-iQ1B7rxKixDZ92fioYBLUU642sEygTcNl',
+          avatarAsset: _avatarAria,
           category: 'Khách hàng mới',
         ),
         Contact(
@@ -64,14 +71,14 @@ class ContactRepositoryImpl implements ContactRepository {
           id: 'c5',
           name: 'Ben Stone',
           company: 'Stone & Associates',
-          avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuApXmZ-FxKMYcRU3vdSwxq1gNpTSMD3EW5RKe3yJZMZJSSqJes-PxepfoHz5qCe7y5xq_HzKuXfNX_YyzyQl3fsO-T3aWwEE5HrccNtMdYPfpm5UrZ9mYm1_Bxm5bV78Dgf8xp_nhgbB5RnrYcXzs5ak5mAvITPJUc2g32MycCibJEcSJ1tb7zWnP1337wTygBIy6EN0cTTKM2lBx62c2s9ZF5RdvvFxfQC5Bq_L1QQogQ9hpqf0kuflfKRGIPUTZxVQ6IfkCUBQlpr',
+          avatarAsset: _avatarBen,
           category: 'Quá hạn',
         ),
         Contact(
           id: 'c6',
           name: 'Carla Bruni',
           company: 'Elysee Design',
-          avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5dfJTOGRnYO87qpEUMOTXTnvbZ8z13GGCg7GN6mYKZbW1vGW-QSajJxNkHrIEMFtN-xFzGnwXhSHy7cVZOofS8DMoENizBv2Bk_yhaV5FyexujE2KFLBrQc-2D2D7FQYeD4aePkMjGLJ8QDPw0o7Kp8DZWOz7gzX4yQfb8rD5OitiKMzmyfUhRUm16k3fV8u_Kl9zdtjeTUDZem3rtlWaDJbt869RKHLbVJY3r143p-76ky-A8tiLphNJFcmRMTBJ10LE2XNEakQZ',
+          avatarAsset: _avatarCarla,
           category: 'Quá hạn',
         ),
       ],
@@ -93,7 +100,7 @@ class ContactRepositoryImpl implements ContactRepository {
           id: 'c8',
           name: 'Diana Prince',
           company: 'Themyscira Corp.',
-          avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDugvaLTuFGskF9GfEOiYoip89r7yGK9OtKK_3dnsvzWweMhUA-4dkYEeSu_vU96mfNunB0Lilubm66W75n_WebnC8S6zketJa0VE9hiyC40hKE5LoRTRnsCOdBbHKMfMF2kkD1Mts7n7dqm0TqoBD4R1EC99r1i7Zxk3IOvCfg0_awV4u8lp_A7dRJhuutivFHzcgvE_h43K0oc6mWEFURDBUmxjKsij1val3G7yidOzj9yEtaAqSCJTKrnQ289QWg5m4qRM-DpWUn',
+          avatarAsset: _avatarDiana,
           category: 'Đã giải quyết',
         ),
       ],
@@ -117,8 +124,7 @@ class ContactRepositoryImpl implements ContactRepository {
         zip: '70000',
         country: 'Vietnam',
       ),
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuDPALnPTx6lMKM3caEx3VgpIouG_f9mDtCQHIHL8MKruxN14OYrduANRmtoaipFV1w1RNumMTIcRFvHIq9UfIsQt0dwMEGfIpCxv-nOuKKgNEsEKxscv8kndNsc9NHvkxcYGdnysamJrDmLmi7q1cIJyd6QR2SWrwyKyjYSNgmFmKNxful5NMqWcjsMJm6JaHL_dqGQP923OzHLrp2rG9qoPaqbD5_V47fFEJYufr4IMY3Mjvqb7efYBdbqFhfVmuvww3fbngNsZT',
-      posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuDPALnPTx6lMKM3caEx3VgpIouG_f9mDtCQHIHL8MKruxN14OYrduANRmtoaipFV1w1RNumMTIcRFvHIq9UfIsQt0dwMEGfIpCxv-nOuKKgNEsEKxscv8kndNsc9NHvkxcYGdnysamJrDmLmi7q1cIJyd6QR2SWrwyKyjYSNgmFmKNxful5NMqWcjsMJm6JaHL_dqGQP923OzHLrp2rG9qoPaqbD5_V47fFEJYufr4IMY3Mjvqb7efYBdbqFhfVmuvww3fbngNsZT',
+      avatarAsset: _avatarAlice,
       category: 'Thu hồi nợ',
     ),
     'c2': const ContactDetail(
@@ -156,8 +162,7 @@ class ContactRepositoryImpl implements ContactRepository {
         zip: '10000',
         country: 'Vietnam',
       ),
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVI1LUjcO4jlqywAa4Vk9MR4y-qNNR6eAVrhEKBHPgi5H2OKj7GqcgH41uKPe2NDNPmBJgcjnzrx1LvRX4pp3PdV0HvzQOaShbLe1bDh1bAWEEpuXKxbvYcskpslnV-SX9Ui0dCRTzbRH8DzqmlFobkuRn2G9fnIezaW-SHZaO3_96SHX50AWHxUkh4odcASScjnKZWOflxR5RDX6HtTTr2FaGUeeC5n0-5X7EaQEKat-iQ1B7rxKixDZ92fioYBLUU642sEygTcNl',
-      posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVI1LUjcO4jlqywAa4Vk9MR4y-qNNR6eAVrhEKBHPgi5H2OKj7GqcgH41uKPe2NDNPmBJgcjnzrx1LvRX4pp3PdV0HvzQOaShbLe1bDh1bAWEEpuXKxbvYcskpslnV-SX9Ui0dCRTzbRH8DzqmlFobkuRn2G9fnIezaW-SHZaO3_96SHX50AWHxUkh4odcASScjnKZWOflxR5RDX6HtTTr2FaGUeeC5n0-5X7EaQEKat-iQ1B7rxKixDZ92fioYBLUU642sEygTcNl',
+      avatarAsset: _avatarAria,
       category: 'Khách hàng mới',
     ),
     'c4': const ContactDetail(
@@ -195,8 +200,7 @@ class ContactRepositoryImpl implements ContactRepository {
         zip: '10000',
         country: 'Vietnam',
       ),
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuApXmZ-FxKMYcRU3vdSwxq1gNpTSMD3EW5RKe3yJZMZJSSqJes-PxepfoHz5qCe7y5xq_HzKuXfNX_YyzyQl3fsO-T3aWwEE5HrccNtMdYPfpm5UrZ9mYm1_Bxm5bV78Dgf8xp_nhgbB5RnrYcXzs5ak5mAvITPJUc2g32MycCibJEcSJ1tb7zWnP1337wTygBIy6EN0cTTKM2lBx62c2s9ZF5RdvvFxfQC5Bq_L1QQogQ9hpqf0kuflfKRGIPUTZxVQ6IfkCUBQlpr',
-      posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuApXmZ-FxKMYcRU3vdSwxq1gNpTSMD3EW5RKe3yJZMZJSSqJes-PxepfoHz5qCe7y5xq_HzKuXfNX_YyzyQl3fsO-T3aWwEE5HrccNtMdYPfpm5UrZ9mYm1_Bxm5bV78Dgf8xp_nhgbB5RnrYcXzs5ak5mAvITPJUc2g32MycCibJEcSJ1tb7zWnP1337wTygBIy6EN0cTTKM2lBx62c2s9ZF5RdvvFxfQC5Bq_L1QQogQ9hpqf0kuflfKRGIPUTZxVQ6IfkCUBQlpr',
+      avatarAsset: _avatarBen,
       category: 'Quá hạn',
     ),
     'c6': const ContactDetail(
@@ -214,8 +218,7 @@ class ContactRepositoryImpl implements ContactRepository {
         zip: '70000',
         country: 'Vietnam',
       ),
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5dfJTOGRnYO87qpEUMOTXTnvbZ8z13GGCg7GN6mYKZbW1vGW-QSajJxNkHrIEMFtN-xFzGnwXhSHy7cVZOofS8DMoENizBv2Bk_yhaV5FyexujE2KFLBrQc-2D2D7FQYeD4aePkMjGLJ8QDPw0o7Kp8DZWOz7gzX4yQfb8rD5OitiKMzmyfUhRUm16k3fV8u_Kl9zdtjeTUDZem3rtlWaDJbt869RKHLbVJY3r143p-76ky-A8tiLphNJFcmRMTBJ10LE2XNEakQZ',
-      posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5dfJTOGRnYO87qpEUMOTXTnvbZ8z13GGCg7GN6mYKZbW1vGW-QSajJxNkHrIEMFtN-xFzGnwXhSHy7cVZOofS8DMoENizBv2Bk_yhaV5FyexujE2KFLBrQc-2D2D7FQYeD4aePkMjGLJ8QDPw0o7Kp8DZWOz7gzX4yQfb8rD5OitiKMzmyfUhRUm16k3fV8u_Kl9zdtjeTUDZem3rtlWaDJbt869RKHLbVJY3r143p-76ky-A8tiLphNJFcmRMTBJ10LE2XNEakQZ',
+      avatarAsset: _avatarCarla,
       category: 'Quá hạn',
     ),
     'c7': const ContactDetail(
@@ -253,8 +256,7 @@ class ContactRepositoryImpl implements ContactRepository {
         zip: '10000',
         country: 'Vietnam',
       ),
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDugvaLTuFGskF9GfEOiYoip89r7yGK9OtKK_3dnsvzWweMhUA-4dkYEeSu_vU96mfNunB0Lilubm66W75n_WebnC8S6zketJa0VE9hiyC40hKE5LoRTRnsCOdBbHKMfMF2kkD1Mts7n7dqm0TqoBD4R1EC99r1i7Zxk3IOvCfg0_awV4u8lp_A7dRJhuutivFHzcgvE_h43K0oc6mWEFURDBUmxjKsij1val3G7yidOzj9yEtaAqSCJTKrnQ289QWg5m4qRM-DpWUn',
-      posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDugvaLTuFGskF9GfEOiYoip89r7yGK9OtKK_3dnsvzWweMhUA-4dkYEeSu_vU96mfNunB0Lilubm66W75n_WebnC8S6zketJa0VE9hiyC40hKE5LoRTRnsCOdBbHKMfMF2kkD1Mts7n7dqm0TqoBD4R1EC99r1i7Zxk3IOvCfg0_awV4u8lp_A7dRJhuutivFHzcgvE_h43K0oc6mWEFURDBUmxjKsij1val3G7yidOzj9yEtaAqSCJTKrnQ289QWg5m4qRM-DpWUn',
+      avatarAsset: _avatarDiana,
       category: 'Đã giải quyết',
     ),
   };

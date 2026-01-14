@@ -603,7 +603,7 @@ class _ContactItem extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    if (contact.avatarUrl != null) {
+    if (contact.hasAvatar) {
       return Container(
         width: 48.w,
         height: 48.w,
@@ -611,7 +611,7 @@ class _ContactItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(color: AppColors.gray200),
           image: DecorationImage(
-            image: NetworkImage(contact.avatarUrl!),
+            image: AssetImage(contact.avatarAsset!),
             fit: BoxFit.cover,
           ),
         ),

@@ -24,22 +24,25 @@ class Contact {
   final String id;
   final String name;
   final String company;
-  final String? avatarUrl;
+  final String? avatarAsset; // Local asset path
   final String? initials;
   final Color? initialsBgColor;
   final Color? initialsTextColor;
-  final String? category; // Category like "Thu hồi nợ", "Khách hàng mới", etc.
+  final String? category;
 
   const Contact({
     required this.id,
     required this.name,
     required this.company,
-    this.avatarUrl,
+    this.avatarAsset,
     this.initials,
     this.initialsBgColor,
     this.initialsTextColor,
     this.category,
   });
+
+  /// Check if has avatar
+  bool get hasAvatar => avatarAsset != null && avatarAsset!.isNotEmpty;
 
   /// Get initials from name if not provided
   String get displayInitials {
@@ -56,7 +59,7 @@ class Contact {
     String? id,
     String? name,
     String? company,
-    String? avatarUrl,
+    String? avatarAsset,
     String? initials,
     Color? initialsBgColor,
     Color? initialsTextColor,
@@ -66,7 +69,7 @@ class Contact {
       id: id ?? this.id,
       name: name ?? this.name,
       company: company ?? this.company,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      avatarAsset: avatarAsset ?? this.avatarAsset,
       initials: initials ?? this.initials,
       initialsBgColor: initialsBgColor ?? this.initialsBgColor,
       initialsTextColor: initialsTextColor ?? this.initialsTextColor,
@@ -110,10 +113,9 @@ class ContactDetail {
   final String email;
   final String? phone;
   final Address address;
-  final String? avatarUrl; // Changed to nullable for initials fallback
-  final String? posterUrl;
+  final String? avatarAsset; // Local asset path
   final String? notes;
-  final String? category; // Added category field
+  final String? category;
   final String? initials;
   final Color? initialsBgColor;
   final Color? initialsTextColor;
@@ -127,8 +129,7 @@ class ContactDetail {
     required this.email,
     this.phone,
     required this.address,
-    this.avatarUrl,
-    this.posterUrl,
+    this.avatarAsset,
     this.notes,
     this.category,
     this.initials,
@@ -138,38 +139,12 @@ class ContactDetail {
 
   String get fullName => '$firstName $lastName';
 
+  /// Check if has avatar
+  bool get hasAvatar => avatarAsset != null && avatarAsset!.isNotEmpty;
+
   /// Get initials from name if not provided
   String get displayInitials {
     if (initials != null) return initials!;
     return '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'.toUpperCase();
-  }
-
-  /// Create from Contact model
-  factory ContactDetail.fromContact(Contact contact, {String? category}) {
-    final nameParts = contact.name.split(' ');
-    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
-    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
-    
-    return ContactDetail(
-      id: contact.id,
-      firstName: firstName,
-      lastName: lastName,
-      jobTitle: 'Contact', // Default job title
-      company: contact.company,
-      email: '${firstName.toLowerCase()}_${lastName.toLowerCase()}@company.com',
-      avatarUrl: contact.avatarUrl,
-      posterUrl: contact.avatarUrl,
-      address: const Address(
-        street: 'Address not available',
-        city: '',
-        state: '',
-        zip: '',
-        country: '',
-      ),
-      category: category ?? contact.category,
-      initials: contact.initials,
-      initialsBgColor: contact.initialsBgColor,
-      initialsTextColor: contact.initialsTextColor,
-    );
   }
 }

@@ -288,8 +288,6 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
   }
 
   Widget _buildProfileSection(ContactDetail contact) {
-    final hasAvatar = contact.avatarUrl != null && contact.avatarUrl!.isNotEmpty;
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -309,13 +307,10 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
               borderRadius: BorderRadius.circular(92.r),
               child: Container(
                 color: Colors.white.withValues(alpha: 0.2),
-                child: hasAvatar
-                    ? Image.network(
-                        contact.avatarUrl!,
+                child: contact.hasAvatar
+                    ? Image.asset(
+                        contact.avatarAsset!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildInitialsAvatar(contact);
-                        },
                       )
                     : _buildInitialsAvatar(contact),
               ),
@@ -407,8 +402,6 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
   }
 
   Widget _buildPhotoCard(ContactDetail contact) {
-    final hasAvatar = contact.avatarUrl != null && contact.avatarUrl!.isNotEmpty;
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(28.r),
       child: BackdropFilter(
@@ -430,13 +423,10 @@ class _ContactDetailViewState extends ConsumerState<ContactDetailView> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(19.r),
-                  child: hasAvatar
-                      ? Image.network(
-                          contact.avatarUrl!,
+                  child: contact.hasAvatar
+                      ? Image.asset(
+                          contact.avatarAsset!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildSmallInitialsAvatar(contact);
-                          },
                         )
                       : _buildSmallInitialsAvatar(contact),
                 ),

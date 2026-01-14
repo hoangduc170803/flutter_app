@@ -79,7 +79,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
             ),
             child: Column(
               children: [
-                _buildStepIndicator(),
                 _buildHeader(),
                 SizedBox(height: 40.h),
                 _buildPhoneInput(state.isLoading),
@@ -90,24 +89,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.blue100,
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        'Bước 1/5 • Nhập số điện thoại',
-        style: TextStyle(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primaryBlue,
         ),
       ),
     );
