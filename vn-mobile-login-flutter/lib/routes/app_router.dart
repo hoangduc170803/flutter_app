@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../presentation/views/login_view.dart';
-import '../presentation/views/contact_list_view.dart';
-import '../presentation/views/contact_detail_view.dart';
+import '../presentation/views/order_list_view.dart';
+import '../presentation/views/order_accept_view.dart';
+import '../presentation/views/order_pickup_view.dart';
+import '../presentation/views/order_detail_view.dart';
 
 /// Application route names
 class AppRoutes {
   AppRoutes._();
 
   static const String login = '/';
-  static const String contacts = '/contacts';
-  static const String contactDetail = '/contact-detail';
-  
-  // Legacy routes (redirected)
   static const String orders = '/orders';
-  static const String merchantContact = '/merchant-contact';
+  static const String orderAccept = '/order-accept';
+  static const String orderPickup = '/order-pickup';
+  static const String orderDetail = '/order-detail';
 }
 
 /// Application router
@@ -25,12 +25,14 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.login:
         return _buildRoute(const LoginView(), settings);
-      case AppRoutes.contacts:
-      case AppRoutes.orders: // Legacy route redirects to contacts
-        return _buildRoute(const ContactListView(), settings);
-      case AppRoutes.contactDetail:
-      case AppRoutes.merchantContact: // Legacy route redirects to contact detail
-        return _buildRoute(const ContactDetailView(), settings);
+      case AppRoutes.orders:
+        return _buildRoute(const OrderListView(), settings);
+      case AppRoutes.orderAccept:
+        return _buildRoute(const OrderAcceptView(), settings);
+      case AppRoutes.orderPickup:
+        return _buildRoute(const OrderPickupView(), settings);
+      case AppRoutes.orderDetail:
+        return _buildRoute(const OrderDetailView(), settings);
       default:
         return _buildRoute(const LoginView(), settings);
     }
