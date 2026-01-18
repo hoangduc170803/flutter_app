@@ -37,11 +37,11 @@ class _OrderAcceptViewState extends ConsumerState<OrderAcceptView> {
   void _onAcceptOrder() {
     if (_order == null) return;
     
-    // Update order status to "Đã nhận" in state
-    ref.read(orderStateProvider.notifier).updateOrderStatus(_order!.id, 'Đã nhận');
+    // Update order status to "Đã nhận" (picking) in state
+    ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.picking);
     
     // Create a new order with updated status for navigation
-    final acceptedOrder = _order!.copyWith(status: 'Đã nhận');
+    final acceptedOrder = _order!.copyWith(status: OrderStatus.picking);
     
     // Navigate to order pickup (not detail yet)
     Navigator.pushReplacementNamed(

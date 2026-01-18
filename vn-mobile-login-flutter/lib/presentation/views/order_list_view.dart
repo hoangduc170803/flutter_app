@@ -21,6 +21,7 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
   NavTab _activeTab = NavTab.orders;
   bool _isOnline = true;
   String? _phoneNumber;
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
@@ -28,6 +29,14 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
       _phoneNumber = args;
+    }
+    
+    // Load orders when view is first displayed
+    if (!_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(orderViewModelProvider.notifier).loadOrders();
+      });
     }
   }
 
@@ -167,8 +176,36 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
   }
 
   Widget _buildOrderList() {
-    final orderState = ref.watch(orderStateProvider);
+    final orderState = ref.watch(orderViewModelProvider);
     final orders = orderState.orders;
+    
+    // Show loading indicator
+    if (orderState.isLoading && orders.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryAmber),
+      );
+    }
+    
+    // Show empty state
+    if (orders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 64.sp, color: AppColors.gray400),
+            SizedBox(height: 16.h),
+            Text(
+              'Chưa có đơn hàng nào',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     
     return ListView.builder(
       padding: EdgeInsets.all(12.w),
@@ -182,13 +219,13 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
             onTap: () {
               if (!order.isSpecial) {
                 // If order is in "Đang tìm" status, show accept view first
-                if (order.status == 'Đang tìm') {
+                if (order.status == OrderStatus.searching) {
                   Navigator.pushNamed(
                     context,
                     AppRoutes.orderAccept,
                     arguments: order,
                   );
-                } else if (order.status == 'Đã nhận') {
+                } else if (order.status == OrderStatus.picking) {
                   // If already accepted, go to pickup view
                   Navigator.pushNamed(
                     context,
@@ -364,7 +401,7 @@ class _OrderCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(
-                    order.status,
+                    order.statusDisplayName,
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
@@ -427,7 +464,7 @@ class _OrderCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(
-                    order.status,
+                    order.statusDisplayName,
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,

@@ -1,7 +1,210 @@
+/// Order status enum with display names
+enum OrderStatus {
+  searching('Đang tìm'),
+  picking('Đang lấy hàng'),
+  delivering('Đang giao'),
+  delivered('Đã giao'),
+  cancelled('Đã hủy');
+
+  final String displayName;
+  const OrderStatus(this.displayName);
+
+  /// Parse from string (for API compatibility)
+  static OrderStatus fromString(String value) {
+    return OrderStatus.values.firstWhere(
+      (status) => status.displayName == value || status.name == value,
+      orElse: () => OrderStatus.searching,
+    );
+  }
+}
+
+/// Base mixin for order participants (Recipient, Sender)
+mixin OrderParticipantMixin {
+  String get name;
+  String get phone;
+  String? get avatar;
+
+  /// Get initials from name with proper null safety
+  String get initials {
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
+  }
+}
+
+/// Order recipient model
+class OrderRecipient with OrderParticipantMixin {
+  @override
+  final String name;
+  @override
+  final String phone;
+  @override
+  final String? avatar;
+
+  const OrderRecipient({
+    required this.name,
+    required this.phone,
+    this.avatar,
+  });
+
+  factory OrderRecipient.fromJson(Map<String, dynamic> json) {
+    return OrderRecipient(
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      avatar: json['avatar'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'phone': phone,
+        if (avatar != null) 'avatar': avatar,
+      };
+
+  OrderRecipient copyWith({
+    String? name,
+    String? phone,
+    String? avatar,
+  }) {
+    return OrderRecipient(
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      avatar: avatar ?? this.avatar,
+    );
+  }
+}
+
+/// Order sender model
+class OrderSender with OrderParticipantMixin {
+  @override
+  final String name;
+  @override
+  final String phone;
+  @override
+  final String? avatar;
+
+  const OrderSender({
+    required this.name,
+    required this.phone,
+    this.avatar,
+  });
+
+  factory OrderSender.fromJson(Map<String, dynamic> json) {
+    return OrderSender(
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      avatar: json['avatar'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'phone': phone,
+        if (avatar != null) 'avatar': avatar,
+      };
+
+  OrderSender copyWith({
+    String? name,
+    String? phone,
+    String? avatar,
+  }) {
+    return OrderSender(
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      avatar: avatar ?? this.avatar,
+    );
+  }
+}
+
+/// Order creator model
+class OrderCreator {
+  final String name;
+  final String phone;
+  final String? note;
+
+  const OrderCreator({
+    required this.name,
+    required this.phone,
+    this.note,
+  });
+
+  factory OrderCreator.fromJson(Map<String, dynamic> json) {
+    return OrderCreator(
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      note: json['note'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'phone': phone,
+        if (note != null) 'note': note,
+      };
+
+  OrderCreator copyWith({
+    String? name,
+    String? phone,
+    String? note,
+  }) {
+    return OrderCreator(
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      note: note ?? this.note,
+    );
+  }
+}
+
+/// Payment information model
+class PaymentInfo {
+  final int totalAmount;
+  final int productAmount;
+  final int shippingFee;
+  final String paymentMethod;
+
+  const PaymentInfo({
+    required this.totalAmount,
+    required this.productAmount,
+    required this.shippingFee,
+    required this.paymentMethod,
+  });
+
+  factory PaymentInfo.fromJson(Map<String, dynamic> json) {
+    return PaymentInfo(
+      totalAmount: json['totalAmount'] as int? ?? 0,
+      productAmount: json['productAmount'] as int? ?? 0,
+      shippingFee: json['shippingFee'] as int? ?? 0,
+      paymentMethod: json['paymentMethod'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'totalAmount': totalAmount,
+        'productAmount': productAmount,
+        'shippingFee': shippingFee,
+        'paymentMethod': paymentMethod,
+      };
+
+  PaymentInfo copyWith({
+    int? totalAmount,
+    int? productAmount,
+    int? shippingFee,
+    String? paymentMethod,
+  }) {
+    return PaymentInfo(
+      totalAmount: totalAmount ?? this.totalAmount,
+      productAmount: productAmount ?? this.productAmount,
+      shippingFee: shippingFee ?? this.shippingFee,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+    );
+  }
+}
+
 /// Order model for delivery app
 class Order {
   final String id;
-  final String status;
+  final OrderStatus status;
   final double distance;
   final int price;
   final int? cod;
@@ -40,9 +243,64 @@ class Order {
     this.advanceAmount,
   });
 
+  /// Get status display name for UI
+  String get statusDisplayName => status.displayName;
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['id'] as String? ?? '',
+      status: OrderStatus.fromString(json['status'] as String? ?? ''),
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      price: json['price'] as int? ?? 0,
+      cod: json['cod'] as int?,
+      serviceName: json['serviceName'] as String? ?? '',
+      pickupAddress: json['pickupAddress'] as String?,
+      dropoffAddress: json['dropoffAddress'] as String?,
+      isSpecial: json['isSpecial'] as bool? ?? false,
+      recipient: json['recipient'] != null
+          ? OrderRecipient.fromJson(json['recipient'] as Map<String, dynamic>)
+          : null,
+      sender: json['sender'] != null
+          ? OrderSender.fromJson(json['sender'] as Map<String, dynamic>)
+          : null,
+      creator: json['creator'] != null
+          ? OrderCreator.fromJson(json['creator'] as Map<String, dynamic>)
+          : null,
+      deliveryTime: json['deliveryTime'] as String?,
+      pickupTime: json['pickupTime'] as String?,
+      paymentInfo: json['paymentInfo'] != null
+          ? PaymentInfo.fromJson(json['paymentInfo'] as Map<String, dynamic>)
+          : null,
+      totalFee: json['totalFee'] as int?,
+      cashToReceive: json['cashToReceive'] as int?,
+      advanceAmount: json['advanceAmount'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'status': status.displayName,
+        'distance': distance,
+        'price': price,
+        if (cod != null) 'cod': cod,
+        'serviceName': serviceName,
+        if (pickupAddress != null) 'pickupAddress': pickupAddress,
+        if (dropoffAddress != null) 'dropoffAddress': dropoffAddress,
+        'isSpecial': isSpecial,
+        if (recipient != null) 'recipient': recipient!.toJson(),
+        if (sender != null) 'sender': sender!.toJson(),
+        if (creator != null) 'creator': creator!.toJson(),
+        if (deliveryTime != null) 'deliveryTime': deliveryTime,
+        if (pickupTime != null) 'pickupTime': pickupTime,
+        if (paymentInfo != null) 'paymentInfo': paymentInfo!.toJson(),
+        if (totalFee != null) 'totalFee': totalFee,
+        if (cashToReceive != null) 'cashToReceive': cashToReceive,
+        if (advanceAmount != null) 'advanceAmount': advanceAmount,
+      };
+
   Order copyWith({
     String? id,
-    String? status,
+    OrderStatus? status,
     double? distance,
     int? price,
     int? cod,
@@ -82,154 +340,3 @@ class Order {
     );
   }
 }
-
-class OrderRecipient {
-  final String name;
-  final String phone;
-  final String? avatar;
-
-  const OrderRecipient({
-    required this.name,
-    required this.phone,
-    this.avatar,
-  });
-
-  String get initials {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
-  }
-}
-
-class OrderSender {
-  final String name;
-  final String phone;
-  final String? avatar;
-
-  const OrderSender({
-    required this.name,
-    required this.phone,
-    this.avatar,
-  });
-
-  String get initials {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
-  }
-}
-
-class OrderCreator {
-  final String name;
-  final String phone;
-  final String? note;
-
-  const OrderCreator({
-    required this.name,
-    required this.phone,
-    this.note,
-  });
-}
-
-class PaymentInfo {
-  final int totalAmount;
-  final int productAmount;
-  final int shippingFee;
-  final String paymentMethod;
-
-  const PaymentInfo({
-    required this.totalAmount,
-    required this.productAmount,
-    required this.shippingFee,
-    required this.paymentMethod,
-  });
-}
-
-/// Initial mock orders data
-List<Order> getInitialMockOrders() => [
-  Order(
-    id: '22LNP88J',
-    status: 'Đang tìm',
-    distance: 21.07,
-    price: 48000,
-    cod: 350000,
-    serviceName: 'Siêu Tốc',
-    pickupAddress: '171/74 Đoàn Thị Điểm, Phường An Bình, Dĩ An, tỉnh Bình Dương, Việt Nam',
-    dropoffAddress: '1 Thủ Dầu Một, Hiệp Thành, Thủ Dầu Một, Bình Dương',
-    recipient: const OrderRecipient(name: 'Nguyễn Văn B', phone: '0909123456'),
-    sender: const OrderSender(name: 'Anh Minh', phone: '0909111222'),
-    creator: const OrderCreator(
-      name: 'Nguyễn Văn A',
-      phone: '0909123456',
-      note: 'Giao hàng cẩn thận.',
-    ),
-    deliveryTime: '16:50',
-    pickupTime: '16:12',
-    paymentInfo: const PaymentInfo(
-      totalAmount: 501000,
-      productAmount: 480000,
-      shippingFee: 21000,
-      paymentMethod: 'Tiền mặt',
-    ),
-    totalFee: 108182,
-    cashToReceive: 109000,
-    advanceAmount: 450000,
-  ),
-  Order(
-    id: '22RI7JQP',
-    status: 'Đang tìm',
-    distance: 3.79,
-    price: 23000,
-    cod: 380000,
-    serviceName: 'Siêu Tốc',
-    pickupAddress: '37 Ngõ Thịnh Quang, Thịnh Quang',
-    dropoffAddress: '429/39 Kim Mã, Ngọc Khánh',
-    recipient: const OrderRecipient(name: 'Trần Thị C', phone: '0912345678'),
-    sender: const OrderSender(name: 'Chị Hoa', phone: '0912222333'),
-    creator: const OrderCreator(
-      name: 'Lê Văn D',
-      phone: '0923456789',
-      note: 'Gọi trước khi giao.',
-    ),
-    deliveryTime: '17:30',
-    pickupTime: '17:00',
-    paymentInfo: const PaymentInfo(
-      totalAmount: 403000,
-      productAmount: 380000,
-      shippingFee: 23000,
-      paymentMethod: 'Tiền mặt',
-    ),
-    totalFee: 85000,
-    cashToReceive: 95000,
-    advanceAmount: 200000,
-  ),
-  Order(
-    id: '22RI7JQR',
-    status: 'Đang tìm',
-    distance: 3.86,
-    price: 23000,
-    cod: 150000,
-    serviceName: 'Siêu Tốc',
-    pickupAddress: '37 Ngõ Thịnh Quang, Thịnh Quang',
-    dropoffAddress: 'CHUNG CƯ IMPERIAL PLAZA',
-    recipient: const OrderRecipient(name: 'Phạm Văn E', phone: '0934567890'),
-    sender: const OrderSender(name: 'Anh Tuấn', phone: '0934444555'),
-    creator: const OrderCreator(
-      name: 'Hoàng Thị F',
-      phone: '0945678901',
-    ),
-    deliveryTime: '18:00',
-    pickupTime: '17:30',
-    paymentInfo: const PaymentInfo(
-      totalAmount: 173000,
-      productAmount: 150000,
-      shippingFee: 23000,
-      paymentMethod: 'Chuyển khoản',
-    ),
-    totalFee: 45000,
-    cashToReceive: 55000,
-    advanceAmount: 100000,
-  ),
-];

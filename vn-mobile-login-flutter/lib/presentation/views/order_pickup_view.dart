@@ -84,30 +84,11 @@ class _OrderPickupViewState extends ConsumerState<OrderPickupView> {
   void _onPickedUp() {
     if (_order == null) return;
     
-    // Update order status to "Đang giao hàng"
-    final updatedOrder = Order(
-      id: _order!.id,
-      status: 'Đang giao hàng',
-      distance: _order!.distance,
-      price: _order!.price,
-      cod: _order!.cod,
-      serviceName: _order!.serviceName,
-      pickupAddress: _order!.pickupAddress,
-      dropoffAddress: _order!.dropoffAddress,
-      isSpecial: _order!.isSpecial,
-      recipient: _order!.recipient,
-      creator: _order!.creator,
-      sender: _order!.sender,
-      deliveryTime: _order!.deliveryTime,
-      pickupTime: _order!.pickupTime,
-      paymentInfo: _order!.paymentInfo,
-      totalFee: _order!.totalFee,
-      cashToReceive: _order!.cashToReceive,
-      advanceAmount: _order!.advanceAmount,
-    );
+    // Update order status to "Đang giao hàng" (delivering)
+    final updatedOrder = _order!.copyWith(status: OrderStatus.delivering);
     
     // Update the order in the state
-    ref.read(orderStateProvider.notifier).updateOrderStatus(_order!.id, 'Đang giao hàng');
+    ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.delivering);
     
     // Navigate to order detail
     Navigator.pushReplacementNamed(

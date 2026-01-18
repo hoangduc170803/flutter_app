@@ -818,7 +818,7 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
               onTap: () {
                 // Handle success action - update order status
                 if (_order != null) {
-                  ref.read(orderStateProvider.notifier).updateOrderStatus(_order!.id, 'Hoàn thành');
+                  ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.delivered);
                 }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
