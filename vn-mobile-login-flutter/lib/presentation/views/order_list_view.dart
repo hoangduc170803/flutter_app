@@ -66,57 +66,97 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left Section: Avatar & Filter
-          Row(
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Avatar button
-              Container(
-                width: 36.w,
-                height: 36.w,
-                decoration: BoxDecoration(
-                  color: AppColors.gray600.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(18.r),
-                  border: Border.all(
-                    color: AppColors.gray400.withValues(alpha: 0.5),
-                    width: 2,
+              // Hàng 1: Avatar và Filter
+              Row(
+                children: [
+                  // Avatar button
+                  Container(
+                    width: 36.w,
+                    height: 36.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.gray600.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(18.r),
+                      border: Border.all(
+                        color: AppColors.gray400.withValues(alpha: 0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      color: AppColors.gray200,
+                      size: 20.sp,
+                    ),
                   ),
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: AppColors.gray200,
-                  size: 20.sp,
-                ),
+                  SizedBox(width: 12.w),
+                  // Filter button
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.filter_list,
+                          color: AppColors.gray300,
+                          size: 16.sp,
+                        ),
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryAmber,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Text(
+                            'Tất cả',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 12.w),
-              // Filter button
+
+              SizedBox(height: 8.h), // Khoảng cách giữa 2 dòng
+
+              // Hàng 2: Box Số điện thoại
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(20.r),
+                  color: AppColors.gray700.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                      color: AppColors.gray600.withValues(alpha: 0.3)),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.filter_list,
-                      color: AppColors.gray300,
-                      size: 16.sp,
+                        Icons.phone_in_talk,
+                        size: 12.sp,
+                        color: AppColors.primaryAmber
                     ),
-                    SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryAmber,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      child: Text(
-                        'Tất cả',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      'Masking: 098999999',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.gray200,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -124,7 +164,7 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
               ),
             ],
           ),
-          // Right Section: Status Toggle
+
           Row(
             children: [
               Text(
@@ -149,7 +189,7 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
                   child: AnimatedAlign(
                     duration: const Duration(milliseconds: 300),
                     alignment:
-                        _isOnline ? Alignment.centerRight : Alignment.centerLeft,
+                    _isOnline ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
                       width: 20.w,
                       height: 20.w,

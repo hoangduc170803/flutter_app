@@ -56,8 +56,6 @@ class LoginViewModel extends Notifier<LoginState> {
     );
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(milliseconds: 500));
       // Thành công - View sẽ listen và navigate
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {
