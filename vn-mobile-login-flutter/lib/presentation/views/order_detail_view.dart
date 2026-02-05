@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../data/models/order.dart';
+import '../../data/services/pnm_config.dart';
 import '../providers/providers.dart';
 import '../widgets/call_masking_modal.dart';
 
@@ -19,14 +20,61 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
   Order? _order;
   bool _paymentExpanded = false;
   bool _creatorExpanded = false;
-  String? _virtualNumber;
+  String _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+  String? _subid;
+  bool _isLoading = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Order) {
+    if (args is Map<String, dynamic>) {
+      _order = args['order'] as Order?;
+      _axbMaskedNumber = args['axbMaskedNumber'] as String? ?? PnmConfig.defaultAxbMaskedNumber;
+      _subid = args['subid'] as String?;
+    } else if (args is Order) {
+      // Backward compatibility
       _order = args;
+    }
+  }
+
+  /// Handle delivery completion (success or failure)
+  Future<void> _onDeliveryComplete({required bool isSuccess}) async {
+    if (_order == null || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      // Unbind with recipient to release masked number
+      if (_subid != null && _subid!.isNotEmpty) {
+        print('[OrderDetail] Unbinding on delivery ${isSuccess ? 'success' : 'failure'}: $_subid');
+        final pnmService = ref.read(pnmServiceProvider);
+        await pnmService.unbindAxb(subid: _subid!);
+      } else {
+        print('[OrderDetail] No subid to unbind');
+      }
+    } catch (e) {
+      print('[OrderDetail] Error unbinding: $e');
+    }
+    
+    setState(() => _isLoading = false);
+    
+    // Update order status
+    if (isSuccess) {
+      ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.delivered);
+    } else {
+      ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.cancelled);
+    }
+    
+    // Show feedback and navigate back
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isSuccess ? 'Giao hàng thành công!' : 'Giao hàng thất bại'),
+          backgroundColor: isSuccess ? AppColors.green500 : AppColors.red500,
+        ),
+      );
+      Navigator.pop(context);
     }
   }
 
@@ -35,6 +83,38 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (match) => '${match[1]}.',
         );
+  }
+
+  /// Check if order is in a final state (completed)
+  bool get _isOrderCompleted {
+    return _order?.status == OrderStatus.delivered ||
+           _order?.status == OrderStatus.cancelled;
+  }
+
+  /// Get status display text based on order status
+  String get _statusText {
+    switch (_order?.status) {
+      case OrderStatus.delivered:
+        return 'Giao hàng thành công';
+      case OrderStatus.cancelled:
+        return 'Giao hàng thất bại';
+      case OrderStatus.delivering:
+        return 'Đang giao hàng';
+      default:
+        return _order?.status?.displayName ?? 'Đang giao hàng';
+    }
+  }
+
+  /// Get status color based on order status
+  Color get _statusColor {
+    switch (_order?.status) {
+      case OrderStatus.delivered:
+        return AppColors.green500;
+      case OrderStatus.cancelled:
+        return AppColors.red500;
+      default:
+        return AppColors.gray300;
+    }
   }
 
   Future<void> _makePhoneCall(String phone) async {
@@ -49,19 +129,16 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
   }
 
   void _showCallMaskingModal(String contactName) {
-    // Simulate getting virtual number from API
-    _virtualNumber = '1900636999';
-    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => CallMaskingModal(
         contactName: contactName,
-        virtualNumber: _virtualNumber!,
+        virtualNumber: _axbMaskedNumber,
         onConfirm: () {
           Navigator.pop(context);
-          _makePhoneCall(_virtualNumber!);
+          _makePhoneCall(_axbMaskedNumber);
         },
         onCancel: () {
           Navigator.pop(context);
@@ -115,7 +192,8 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
                 ),
               ),
             ),
-            _buildFooterActions(),
+            // Only show action buttons if order is not completed
+            if (!_isOrderCompleted) _buildFooterActions(),
           ],
         ),
       ),
@@ -157,10 +235,11 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Đang giao hàng',
+                    _statusText,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.gray300,
+                      color: _isOrderCompleted ? _statusColor : AppColors.gray300,
+                      fontWeight: _isOrderCompleted ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -399,73 +478,75 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
             ],
           ),
           SizedBox(height: 20.h),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _showCallMaskingModal(recipient.name),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    decoration: BoxDecoration(
-                      color: AppColors.gray100,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.phone,
-                          color: AppColors.gray700,
-                          size: 20.sp,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Gọi điện',
-                          style: TextStyle(
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w600,
+          // Hide call/message buttons when order is completed
+          if (!_isOrderCompleted)
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _showCallMaskingModal(recipient.name),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray100,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.phone,
                             color: AppColors.gray700,
+                            size: 20.sp,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Gọi điện',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _sendSms(recipient.phone),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    decoration: BoxDecoration(
-                      color: AppColors.gray100,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.message,
-                          color: AppColors.gray700,
-                          size: 20.sp,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Nhắn tin',
-                          style: TextStyle(
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w600,
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _sendSms(recipient.phone),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray100,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.message,
                             color: AppColors.gray700,
+                            size: 20.sp,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Nhắn tin',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -789,25 +870,31 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                // Handle failure action
-                Navigator.pop(context);
-              },
+              onTap: _isLoading ? null : () => _onDeliveryComplete(isSuccess: false),
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 14.h),
                 decoration: BoxDecoration(
-                  color: AppColors.gray200,
+                  color: _isLoading ? AppColors.gray100 : AppColors.gray200,
                   borderRadius: BorderRadius.circular(8.r),
                 ),
-                child: Text(
-                  'Thất bại',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.gray800,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.gray500,
+                        ),
+                      )
+                    : Text(
+                        'Thất bại',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gray800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
               ),
             ),
           ),
@@ -815,19 +902,7 @@ class _OrderDetailViewState extends ConsumerState<OrderDetailView> {
           Expanded(
             flex: 2,
             child: GestureDetector(
-              onTap: () {
-                // Handle success action - update order status
-                if (_order != null) {
-                  ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.delivered);
-                }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Giao hàng thành công!'),
-                    backgroundColor: AppColors.green500,
-                  ),
-                );
-                Navigator.pop(context);
-              },
+              onTap: _isLoading ? null : () => _onDeliveryComplete(isSuccess: true),
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 14.h),
                 decoration: BoxDecoration(

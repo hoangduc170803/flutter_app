@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../data/models/order.dart';
+import '../../data/services/pnm_config.dart';
 import '../../routes/app_router.dart';
 import '../providers/providers.dart';
 
@@ -17,6 +18,9 @@ class OrderAcceptView extends ConsumerStatefulWidget {
 class _OrderAcceptViewState extends ConsumerState<OrderAcceptView> {
   Order? _order;
   bool _priceExpanded = false;
+  bool _isLoading = false;
+  String _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+  String? _subid;
 
   @override
   void didChangeDependencies() {
@@ -34,8 +38,47 @@ class _OrderAcceptViewState extends ConsumerState<OrderAcceptView> {
         );
   }
 
-  void _onAcceptOrder() {
-    if (_order == null) return;
+  Future<void> _onAcceptOrder() async {
+    if (_order == null || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      // Get driver phone number from store
+      final driverPhone = DriverPhoneStore.phone;
+      
+      // Get customer phone number from order sender
+      final customerPhone = _order!.sender?.phone ?? '';
+      
+      if (driverPhone.isNotEmpty && customerPhone.isNotEmpty) {
+        // Call AXB Binding API to link Driver(A) ↔ X ↔ Customer(B)
+        final pnmService = ref.read(pnmServiceProvider);
+        final response = await pnmService.createAxbBinding(
+          telA: driverPhone,
+          telB: customerPhone,
+          areacode: '010',
+          expiration: '7200', // 2 hours
+          remark: _order!.id,
+        );
+        
+        if (response.isSuccess && response.telX != null) {
+          _axbMaskedNumber = response.telX!;
+          _subid = response.subid;
+          print('[OrderAccept] AXB binding success: telX=$_axbMaskedNumber, subid=$_subid');
+        } else {
+          print('[OrderAccept] AXB binding failed: ${response.message}, using default');
+          _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+        }
+      } else {
+        print('[OrderAccept] Missing phone numbers, using default. driver=$driverPhone, customer=$customerPhone');
+        _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+      }
+    } catch (e) {
+      print('[OrderAccept] Error creating AXB binding: $e');
+      _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+    }
+    
+    setState(() => _isLoading = false);
     
     // Update order status to "Đã nhận" (picking) in state
     ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.picking);
@@ -43,12 +86,18 @@ class _OrderAcceptViewState extends ConsumerState<OrderAcceptView> {
     // Create a new order with updated status for navigation
     final acceptedOrder = _order!.copyWith(status: OrderStatus.picking);
     
-    // Navigate to order pickup (not detail yet)
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.orderPickup,
-      arguments: acceptedOrder,
-    );
+    // Navigate to order pickup with AXB masked number
+    if (mounted) {
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.orderPickup,
+        arguments: {
+          'order': acceptedOrder,
+          'axbMaskedNumber': _axbMaskedNumber,
+          'subid': _subid,
+        },
+      );
+    }
   }
 
   @override

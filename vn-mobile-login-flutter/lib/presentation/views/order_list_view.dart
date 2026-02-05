@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../data/models/order.dart';
+import '../../data/services/pnm_config.dart';
 import '../../routes/app_router.dart';
 import '../providers/providers.dart';
 
@@ -20,15 +21,18 @@ class OrderListView extends ConsumerStatefulWidget {
 class _OrderListViewState extends ConsumerState<OrderListView> {
   NavTab _activeTab = NavTab.orders;
   bool _isOnline = true;
+  // ignore: unused_field - Used for future features
   String? _phoneNumber;
+  String _maskedNumber = PnmConfig.defaultMaskedNumber;
   bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is String) {
-      _phoneNumber = args;
+    if (args is Map<String, dynamic>) {
+      _phoneNumber = args['phoneNumber'] as String?;
+      _maskedNumber = args['maskedNumber'] as String? ?? PnmConfig.defaultMaskedNumber;
     }
     
     // Load orders when view is first displayed
@@ -152,7 +156,7 @@ class _OrderListViewState extends ConsumerState<OrderListView> {
                     ),
                     SizedBox(width: 6.w),
                     Text(
-                      'Masking: 098999999',
+                      'Masking: $_maskedNumber',
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: AppColors.gray200,

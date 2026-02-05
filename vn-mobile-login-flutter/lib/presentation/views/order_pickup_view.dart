@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../data/models/order.dart';
+import '../../data/services/pnm_config.dart';
 import '../../routes/app_router.dart';
 import '../providers/providers.dart';
 import '../widgets/call_masking_modal.dart';
@@ -20,13 +21,20 @@ class _OrderPickupViewState extends ConsumerState<OrderPickupView> {
   Order? _order;
   bool _paymentExpanded = false;
   bool _creatorExpanded = false;
-  String? _virtualNumber;
+  String _axbMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+  String? _currentSubid;
+  bool _isLoading = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Order) {
+    if (args is Map<String, dynamic>) {
+      _order = args['order'] as Order?;
+      _axbMaskedNumber = args['axbMaskedNumber'] as String? ?? PnmConfig.defaultAxbMaskedNumber;
+      _currentSubid = args['subid'] as String?;
+    } else if (args is Order) {
+      // Backward compatibility
       _order = args;
     }
   }
@@ -50,18 +58,16 @@ class _OrderPickupViewState extends ConsumerState<OrderPickupView> {
   }
 
   void _showCallMaskingModal(String contactName) {
-    _virtualNumber = '1900636999';
-    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => CallMaskingModal(
         contactName: contactName,
-        virtualNumber: _virtualNumber!,
+        virtualNumber: _axbMaskedNumber,
         onConfirm: () {
           Navigator.pop(context);
-          _makePhoneCall(_virtualNumber!);
+          _makePhoneCall(_axbMaskedNumber);
         },
         onCancel: () {
           Navigator.pop(context);
@@ -81,8 +87,51 @@ class _OrderPickupViewState extends ConsumerState<OrderPickupView> {
     }
   }
 
-  void _onPickedUp() {
-    if (_order == null) return;
+  Future<void> _onPickedUp() async {
+    if (_order == null || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    String newMaskedNumber = PnmConfig.defaultAxbMaskedNumber;
+    String? newSubid;
+    
+    try {
+      final pnmService = ref.read(pnmServiceProvider);
+      final driverPhone = DriverPhoneStore.phone;
+      final recipientPhone = _order!.recipient?.phone ?? '';
+      
+      // Step 1: Unbind with sender
+      if (_currentSubid != null && _currentSubid!.isNotEmpty) {
+        print('[OrderPickup] Unbinding with sender: $_currentSubid');
+        await pnmService.unbindAxb(subid: _currentSubid!);
+      }
+      
+      // Step 2: Create new binding with recipient
+      if (driverPhone.isNotEmpty && recipientPhone.isNotEmpty) {
+        print('[OrderPickup] Creating binding with recipient: $recipientPhone');
+        final response = await pnmService.createAxbBinding(
+          telA: driverPhone,
+          telB: recipientPhone,
+          areacode: '010',
+          expiration: '360',
+          remark: _order!.id,
+        );
+        
+        if (response.isSuccess && response.telX != null) {
+          newMaskedNumber = response.telX!;
+          newSubid = response.subid;
+          print('[OrderPickup] New binding success: telX=$newMaskedNumber, subid=$newSubid');
+        } else {
+          print('[OrderPickup] New binding failed: ${response.message}');
+        }
+      } else {
+        print('[OrderPickup] Missing phone numbers, driver=$driverPhone, recipient=$recipientPhone');
+      }
+    } catch (e) {
+      print('[OrderPickup] Error in unbind/rebind: $e');
+    }
+    
+    setState(() => _isLoading = false);
     
     // Update order status to "Đang giao hàng" (delivering)
     final updatedOrder = _order!.copyWith(status: OrderStatus.delivering);
@@ -90,12 +139,18 @@ class _OrderPickupViewState extends ConsumerState<OrderPickupView> {
     // Update the order in the state
     ref.read(orderViewModelProvider.notifier).updateOrderStatus(_order!.id, OrderStatus.delivering);
     
-    // Navigate to order detail
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.orderDetail,
-      arguments: updatedOrder,
-    );
+    // Navigate to order detail with new masked number
+    if (mounted) {
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.orderDetail,
+        arguments: {
+          'order': updatedOrder,
+          'axbMaskedNumber': newMaskedNumber,
+          'subid': newSubid,
+        },
+      );
+    }
   }
 
   @override

@@ -50,10 +50,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     ref.listen<LoginState>(loginViewModelProvider, (previous, current) {
       if (current.isSuccess && !(previous?.isSuccess ?? false)) {
+        // Store driver phone number for AXB binding
+        DriverPhoneStore.setPhone(current.phoneNumber);
+        
         Navigator.pushNamed(
           context,
           '/orders',
-          arguments: current.phoneNumber,
+          arguments: {
+            'phoneNumber': current.phoneNumber,
+            'maskedNumber': current.maskedNumber,
+          },
         );
         ref.read(loginViewModelProvider.notifier).reset();
       }
